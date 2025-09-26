@@ -797,6 +797,20 @@
 
         let extraIdCounter = 0;
 
+        // ===== Editable feature constants & helpers =====
+        const SKILL_OPTIONS = [
+          "Strength","Warfare","Psyche","Endurance",
+          "Status","Intrigue","Hunting","Lore",
+          "Power Skill (name below)"
+        ];
+        const DAMAGE_TYPES = ["Physical","Psychic","Social","Other (describe below)"];
+        
+        function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-'); }
+        
+        function selectOptionsHtml(options, selected=""){
+          return options.map(o=>`<option value="${o}" ${o===selected?'selected':''}>${o}</option>`).join('');
+        }
+
         // Extras management
         function addExtra() {
             const extraId = 'extra_' + (++extraIdCounter);
@@ -894,78 +908,170 @@
         }
 
         function renderCustomOptions(extra) {
-            if (!extra.type) return '<p style="color: #cccccc; font-style: italic;">Select a type to see custom options.</p>';
-            
-            const features = getAvailableFeatures(extra.type);
-            let html = '<h4 style="color: #EFBF04; margin-bottom: 10px;">Available Features:</h4>';
-            
-            features.forEach(feature => {
-                const isSelected = extra.features.some(f => f.name === feature.name);
-                const isRequired = feature.required && !extra.features.some(f => f.name === feature.required);
-                const disabled = isRequired ? 'disabled' : '';
-                const disabledClass = isRequired ? 'disabled' : '';
-                
-                html += `
-                    <div class="power-item ${disabledClass}">
-                        <label>
-                            <input type="checkbox" ${isSelected ? 'checked' : ''} ${disabled} 
-                                   onchange="toggleExtraFeature('${extra.id}', '${feature.name}', ${feature.cost}, '${feature.required || ''}')">
-                            <span class="power-cost">${feature.cost === 0 ? 'Free' : feature.cost}</span>
-                            ${feature.name}
-                        </label>
-                        <div class="power-description">${feature.description}</div>
-                    </div>
-                `;
-            });
-            
-            return html;
+          if (!extra.type) return '<p style="color: #cccccc; font-style: italic;">Select a type to see custom options.</p>';
+        
+          const available = getAvailableFeatures(extra.type);
+          let html = '<h4 style="color: #EFBF04; margin-bottom: 10px;">Available Features:</h4>';
+        
+          available.forEach(feature => {
+            const selectedIdx = extra.features.findIndex(f => f.name === feature.name);
+            const isSelected = selectedIdx >= 0;
+            const isRequired = feature.required && !extra.features.some(f => f.name === feature.required);
+            const disabled = isRequired ? 'disabled' : '';
+            const disabledClass = isRequired ? 'disabled' : '';
+        
+            html += `
+              <div class="power-item ${disabledClass}">
+                <label>
+                  <input type="checkbox" ${isSelected ? 'checked' : ''} ${disabled}
+                         onchange="toggleExtraFeature('${extra.id}', '${feature.name}', ${feature.cost}, '${feature.required || ''}')">
+                  <span class="power-cost">${feature.cost === 0 ? 'Free' : feature.cost}</span>
+                  ${feature.name}
+                </label>
+                <div class="power-description">${feature.description}</div>
+                ${isSelected && feature.fields ? renderFeatureDetails(extra, feature) : ''}
+              </div>
+            `;
+          });
+        
+          return html;
         }
 
         function getAvailableFeatures(type) {
-            const features = {
-                ally: [
-                    { name: 'Base Cost', cost: 0.5, required: '', description: 'REQUIRED FIRST. Ally starts with an Aspect, one Skill at Amber (0), another at Chaos (-1), and 2 mild stress boxes.' },
-                    { name: 'Organization', cost: 1, required: 'Base Cost', description: 'Has many members. Ability to affect things at scale. Start with one face (named member).' },
-                    { name: 'Aspect', cost: 0.5, required: 'Base Cost', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-                    { name: 'Resolute', cost: 0.25, required: 'Base Cost', description: 'Gives Ally +1 to psychic defense.' },
-                    { name: 'Skilled', cost: 0.5, required: 'Base Cost', description: 'Additional Amber and Chaos skill plus 3 points to buy Skills, Powers, etc.' },
-                    { name: 'Sturdy', cost: 0.25, required: 'Base Cost', description: 'Add one mild stress box. If bought thrice, may add moderate boxes.' },
-                    { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
-                ],
-                domain: [
-                    { name: 'Aspect', cost: 0.25, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-                    { name: 'Barrier', cost: 0.25, required: '', description: 'Each time purchased blocks one Power from Domain.' },
-                    { name: 'Control', cost: 0.25, required: '', description: 'Each time purchased gives +1 to control Domain.' },
-                    { name: 'Exceptional', cost: 0.5, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
-                    { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
-                    { name: 'Focus', cost: 0.5, required: '', description: '+2 to a Skill when [describe circumstance].' },
-                    { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Domain.' },
-                    { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
-                ],
-                item: [
-                    { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-                    { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
-                    { name: 'Flexible', cost: 1, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
-                    { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
-                    { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
-                    { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
-                    { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
-                ],
-                mastery: [
-                    { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-                    { name: 'Dominant', cost: 4, required: '', description: 'Choose one Skill to increase scale from Superior to Paragon. Only one Skill allowed.' },
-                    { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
-                    { name: 'Flexible', cost: 1, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
-                    { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
-                    { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
-                    { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
-                    { name: 'Technique', cost: 0.5, required: '', description: 'Add one ability from a Power. If full Power acquired later, this refunds back.' },
-                    { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+          const features = {
+            ally: [
+              { name: 'Base Cost', cost: 0.5, required: '', description: 'REQUIRED FIRST. Ally starts with an Aspect, one Skill at Amber (0), another at Chaos (-1), and 2 mild stress boxes.' },
+              { name: 'Organization', cost: 1, required: 'Base Cost', description: 'Has many members. Ability to affect things at scale. Start with one face (named member).' },
+              { name: 'Aspect', cost: 0.5, required: 'Base Cost', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.',
+                fields: [
+                  { key:'aspectMode', label:'Mode', type:'select', options:['Add New Aspect','Add Free Invoke'], default:'Add New Aspect' },
+                  { key:'aspectText', label:'Aspect Text', type:'text', placeholder:'e.g., Unbreakable Bond', default:'' },
+                  { key:'invokeCount', label:'Add Invokes (0-2)', type:'number', min:0, max:2, step:1, default:1 }
                 ]
-            };
-            
-            return features[type] || [];
+              },
+              { name: 'Resolute', cost: 0.25, required: 'Base Cost', description: 'Gives Ally +1 to psychic defense.' },
+              { name: 'Skilled', cost: 0.5, required: 'Base Cost', description: 'Additional Amber and Chaos skill plus 3 points to buy Skills, Powers, etc.' },
+              { name: 'Sturdy', cost: 0.25, required: 'Base Cost', description: 'Add one mild stress box. If bought thrice, may add moderate boxes.' },
+              { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            ],
+            domain: [
+              { name: 'Aspect', cost: 0.25, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.',
+                fields: [
+                  { key:'aspectMode', label:'Mode', type:'select', options:['Add New Aspect','Add Free Invoke'], default:'Add New Aspect' },
+                  { key:'aspectText', label:'Aspect Text', type:'text', placeholder:'e.g., Sacred Grove of Secrets', default:'' },
+                  { key:'invokeCount', label:'Add Invokes (0-2)', type:'number', min:0, max:2, step:1, default:1 }
+                ]
+              },
+              { name: 'Barrier', cost: 0.25, required: '', description: 'Each time purchased blocks one Power from Domain.' },
+              { name: 'Control', cost: 0.25, required: '', description: 'Each time purchased gives +1 to control Domain.' },
+              { name: 'Exceptional', cost: 0.5, required: '', description: 'Once per session, break the rules; may repeat by spending Good Stuff.' },
+              { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].',
+                fields: [
+                  { key:'fromSkill', label:'Use Skill', type:'select', options:SKILL_OPTIONS, default:'Warfare' },
+                  { key:'toSkill', label:'In Place Of', type:'select', options:SKILL_OPTIONS, default:'Intrigue' },
+                  { key:'circumstance', label:'When', type:'text', placeholder:'e.g., formal duels before witnesses', default:'' },
+                  { key:'namedPowerSkill', label:'Power Skill Name (if chosen)', type:'text', placeholder:'e.g., Pattern, Logrus...', default:'' }
+                ]
+              },
+              { name: 'Focus', cost: 0.5, required: '', description: '+2 to a Skill when [describe circumstance].',
+                fields: [
+                  { key:'focusSkill', label:'Skill', type:'select', options:SKILL_OPTIONS, default:'Lore' },
+                  { key:'focusCircumstance', label:'When', type:'text', placeholder:'e.g., researching within the Domain sanctuary', default:'' },
+                  { key:'namedPowerSkill', label:'Power Skill Name (if chosen)', type:'text', placeholder:'e.g., Pattern, Logrus...', default:'' }
+                ]
+              },
+              { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Domain.' },
+              { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            ],
+            item: [
+              { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.',
+                fields: [
+                  { key:'aspectMode', label:'Mode', type:'select', options:['Add New Aspect','Add Free Invoke'], default:'Add New Aspect' },
+                  { key:'aspectText', label:'Aspect Text', type:'text', placeholder:'e.g., Blade that Drinks the Dawn', default:'' },
+                  { key:'invokeCount', label:'Add Invokes (0-2)', type:'number', min:0, max:2, step:1, default:1 }
+                ]
+              },
+              { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules; may repeat by spending Good Stuff.' },
+              { name: 'Flexible', cost: 1, required: '', description: 'Use one Skill in place of another when [describe circumstance].',
+                fields: [
+                  { key:'fromSkill', label:'Use Skill', type:'select', options:SKILL_OPTIONS, default:'Warfare' },
+                  { key:'toSkill', label:'In Place Of', type:'select', options:SKILL_OPTIONS, default:'Strength' },
+                  { key:'circumstance', label:'When', type:'text', placeholder:'e.g., while wielding this item in ritual combat', default:'' },
+                  { key:'namedPowerSkill', label:'Power Skill Name (if chosen)', type:'text', placeholder:'e.g., Pattern, Logrus...', default:'' }
+                ]
+              },
+              { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].',
+                fields: [
+                  { key:'focusSkill', label:'Skill', type:'select', options:SKILL_OPTIONS, default:'Endurance' },
+                  { key:'focusCircumstance', label:'When', type:'text', placeholder:'e.g., while the item is sated with blood', default:'' },
+                  { key:'namedPowerSkill', label:'Power Skill Name (if chosen)', type:'text', placeholder:'e.g., Pattern, Logrus...', default:'' }
+                ]
+              },
+              { name: 'Harmful', cost: 0.5, required: '', description: 'Do +1 shift for a damage type or with a Skill/Power if the attack succeeds.',
+                fields: [
+                  { key:'damageType', label:'Damage Type', type:'select', options:DAMAGE_TYPES, default:'Physical' },
+                  { key:'appliesWith', label:'With (Skill/Power)', type:'text', placeholder:'optional: e.g., Warfare, Psyche, Logrus', default:'' },
+                  { key:'otherDamage', label:'If Other, describe', type:'text', placeholder:'e.g., Radiant, Void, etc.', default:'' }
+                ]
+              },
+              { name: 'Protective', cost: 1, required: '', description: 'Reduce a successful attack by 1 shift for a damage type.',
+                fields: [
+                  { key:'resistType', label:'Reduces Type', type:'select', options:DAMAGE_TYPES, default:'Physical' },
+                  { key:'otherDamage', label:'If Other, describe', type:'text', placeholder:'e.g., Radiant, Void, etc.', default:'' }
+                ]
+              },
+              { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            ],
+            mastery: [
+              { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.',
+                fields: [
+                  { key:'aspectMode', label:'Mode', type:'select', options:['Add New Aspect','Add Free Invoke'], default:'Add New Aspect' },
+                  { key:'aspectText', label:'Aspect Text', type:'text', placeholder:'e.g., Trained by Benedict', default:'' },
+                  { key:'invokeCount', label:'Add Invokes (0-2)', type:'number', min:0, max:2, step:1, default:1 }
+                ]
+              },
+              { name: 'Dominant', cost: 4, required: '', description: 'Increase one Skill’s scale from Superior to Paragon (only one Skill allowed).',
+                fields: [
+                  { key:'dominantSkill', label:'Dominant Skill', type:'select', options:SKILL_OPTIONS, default:'Warfare' },
+                  { key:'namedPowerSkill', label:'Power Skill Name (if chosen)', type:'text', placeholder:'e.g., Pattern, Logrus...', default:'' }
+                ]
+              },
+              { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules; may repeat by spending Good Stuff.' },
+              { name: 'Flexible', cost: 1, required: '', description: 'Use one Skill in place of another when [describe circumstance].',
+                fields: [
+                  { key:'fromSkill', label:'Use Skill', type:'select', options:SKILL_OPTIONS, default:'Intrigue' },
+                  { key:'toSkill', label:'In Place Of', type:'select', options:SKILL_OPTIONS, default:'Status' },
+                  { key:'circumstance', label:'When', type:'text', placeholder:'e.g., when leveraging court gossip', default:'' },
+                  { key:'namedPowerSkill', label:'Power Skill Name (if chosen)', type:'text', placeholder:'e.g., Pattern, Logrus...', default:'' }
+                ]
+              },
+              { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].',
+                fields: [
+                  { key:'focusSkill', label:'Skill', type:'select', options:SKILL_OPTIONS, default:'Psyche' },
+                  { key:'focusCircumstance', label:'When', type:'text', placeholder:'e.g., deep meditation or trance', default:'' },
+                  { key:'namedPowerSkill', label:'Power Skill Name (if chosen)', type:'text', placeholder:'e.g., Pattern, Logrus...', default:'' }
+                ]
+              },
+              { name: 'Harmful', cost: 0.5, required: '', description: 'Do an additional shift of harm for a damage type or with a Skill/Power.',
+                fields: [
+                  { key:'damageType', label:'Damage Type', type:'select', options:DAMAGE_TYPES, default:'Psychic' },
+                  { key:'appliesWith', label:'With (Skill/Power)', type:'text', placeholder:'optional: e.g., Psyche, Sorcery', default:'' },
+                  { key:'otherDamage', label:'If Other, describe', type:'text', placeholder:'e.g., Radiant, Void, etc.', default:'' }
+                ]
+              },
+              { name: 'Protective', cost: 1, required: '', description: 'Reduces a successful attack by 1 shift for a damage type.',
+                fields: [
+                  { key:'resistType', label:'Reduces Type', type:'select', options:DAMAGE_TYPES, default:'Psychic' },
+                  { key:'otherDamage', label:'If Other, describe', type:'text', placeholder:'e.g., Radiant, Void, etc.', default:'' }
+                ]
+              },
+              { name: 'Technique', cost: 0.5, required: '', description: 'Add one ability from a Power. If full Power acquired later, this refunds back.' },
+              { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            ]
+          };
+          return features[type] || [];
         }
+
 
         function updateExtraName(extraId) {
             const extra = character.extras.find(e => e.id === extraId);
@@ -1017,28 +1123,38 @@
         }
 
         function toggleExtraFeature(extraId, featureName, cost, required) {
-            const extra = character.extras.find(e => e.id === extraId);
-            const featureIndex = extra.features.findIndex(f => f.name === featureName);
-            
-            if (featureIndex >= 0) {
-                // Remove feature
-                extra.features.splice(featureIndex, 1);
-            } else {
-                // Add feature
-                extra.features.push({ name: featureName, cost: cost });
+          const extra = character.extras.find(e => e.id === extraId);
+          const available = getAvailableFeatures(extra.type);
+          const featureDef = available.find(f => f.name === featureName);
+        
+          const idx = extra.features.findIndex(f => f.name === featureName);
+          if (idx >= 0) {
+            // Remove feature
+            extra.features.splice(idx, 1);
+          } else {
+            const newFeat = { name: featureName, cost: cost };
+            // Initialize details if the feature has fields
+            if (featureDef && featureDef.fields) {
+              newFeat.details = {};
+              featureDef.fields.forEach(field => {
+                newFeat.details[field.key] = field.default ?? '';
+              });
             }
-            
-            // Re-render to update disabled states
-            const customDiv = document.getElementById(extraId + '_custom_options');
-            customDiv.innerHTML = renderCustomOptions(extra);
-            
-            // Update cost display
-            const costDiv = document.querySelector(`#${extraId} .skill-cost`);
-            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
-            
-            updatePointsDisplay();
-            saveCharacter();
+            extra.features.push(newFeat);
+          }
+        
+          // Re-render to update disabled states and details
+          const customDiv = document.getElementById(extraId + '_custom_options');
+          customDiv.innerHTML = renderCustomOptions(extra);
+        
+          // Update cost display
+          const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+          costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+        
+          updatePointsDisplay();
+          saveCharacter();
         }
+
 
         function calculateExtraCost(extra) {
             if (!extra.type) return 0;
@@ -1384,7 +1500,9 @@
                     if (extra.isSimple && extra.simpleAspect) {
                         summary += `<p style="margin-left: 20px; font-style: italic;">Aspect: ${extra.simpleAspect}</p>`;
                     } else if (!extra.isSimple && extra.features.length > 0) {
-                        summary += `<p style="margin-left: 20px; font-style: italic;">Features: ${extra.features.map(f => f.name).join(', ')}</p>`;
+                        summary += `<ul style="margin-left: 28px; font-style: italic; list-style: disc;">
+                          ${extra.features.map(f => `<li>${formatFeatureLabel(f)}</li>`).join('')}
+                        </ul>`;
                     }
                 });
             }
@@ -1444,11 +1562,15 @@
                     
                     output += `${extraName}${extraType}${costText}\n`;
                     
+                    // After writing the extra header line...
                     if (extra.isSimple && extra.simpleAspect) {
-                        output += `  Aspect: ${extra.simpleAspect}\n`;
+                      output += `  Aspect: ${extra.simpleAspect}\n`;
                     } else if (!extra.isSimple && extra.features.length > 0) {
-                        output += `  Features: ${extra.features.map(f => f.name).join(', ')}\n`;
+                      extra.features.forEach(f => {
+                        output += `  - ${formatFeatureLabel(f)}\n`;
+                      });
                     }
+
                 });
             }
             
@@ -1468,6 +1590,115 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
+
+        function renderFeatureDetails(extra, featureDef){
+          const f = extra.features.find(fe => fe.name === featureDef.name);
+          const details = f?.details || {};
+          const rows = featureDef.fields.map(field => {
+            const inputId = `${extra.id}_${slugify(featureDef.name)}_${field.key}`;
+            const val = details[field.key] ?? field.default ?? '';
+        
+            if (field.type === 'select') {
+              return `
+                <div class="form-row" style="margin-left: 24px;">
+                  <label for="${inputId}" style="min-width: 160px;">${field.label}:</label>
+                  <select id="${inputId}" onchange="updateFeatureDetail('${extra.id}','${featureDef.name}','${field.key}', this.value)">
+                    ${selectOptionsHtml(field.options, val)}
+                  </select>
+                </div>`;
+            } else if (field.type === 'number') {
+              return `
+                <div class="form-row" style="margin-left: 24px;">
+                  <label for="${inputId}" style="min-width: 160px;">${field.label}:</label>
+                  <input type="number" id="${inputId}" value="${val}"
+                         min="${field.min ?? ''}" max="${field.max ?? ''}" step="${field.step ?? 1}"
+                         onchange="updateFeatureDetail('${extra.id}','${featureDef.name}','${field.key}', this.value)">
+                </div>`;
+            }
+            // default to text
+            return `
+              <div class="form-row" style="margin-left: 24px;">
+                <label for="${inputId}" style="min-width: 160px;">${field.label}:</label>
+                <input type="text" id="${inputId}" value="${val}" placeholder="${field.placeholder ?? ''}"
+                       oninput="updateFeatureDetail('${extra.id}','${featureDef.name}','${field.key}', this.value)">
+              </div>`;
+          }).join('');
+        
+          return `<div style="margin-top:8px; padding:8px 10px; border-left: 3px solid #6C3BAA;">${rows}</div>`;
+        }
+        
+        function updateFeatureDetail(extraId, featureName, key, value){
+          const extra = character.extras.find(e => e.id === extraId);
+          if (!extra) return;
+          const feat = extra.features.find(f => f.name === featureName);
+          if (!feat) return;
+          feat.details = feat.details || {};
+          // Coerce numbers if needed
+          if (!isNaN(value) && value !== '' && ['invokeCount'].includes(key)) {
+            feat.details[key] = parseInt(value, 10);
+          } else {
+            feat.details[key] = value;
+          }
+          // live update cost/summary
+          const customDiv = document.getElementById(extraId + '_custom_options');
+          customDiv.innerHTML = renderCustomOptions(extra);
+          const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+          costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+          updatePointsDisplay();
+          saveCharacter();
+        }
+
+        function formatFeatureLabel(f){
+          // Include details for the common editable features
+          const d = f.details || {};
+          switch (f.name) {
+            case 'Flexible':
+              {
+                const fs = d.fromSkill || '?', ts = d.toSkill || '?';
+                const pow = (fs.includes('Power Skill') || ts.includes('Power Skill')) && d.namedPowerSkill ? ` (${d.namedPowerSkill})` : '';
+                const when = d.circumstance ? ` when ${d.circumstance}` : '';
+                return `Flexible: use ${fs}${pow} instead of ${ts}${pow}${when}`;
+              }
+            case 'Focus':
+              {
+                const s = d.focusSkill || '?';
+                const pow = (s && s.includes('Power Skill') && d.namedPowerSkill) ? ` (${d.namedPowerSkill})` : '';
+                const when = d.focusCircumstance ? ` when ${d.focusCircumstance}` : '';
+                return `Focus: +2 to ${s}${pow}${when}`;
+              }
+            case 'Harmful':
+              {
+                const t = d.damageType || 'Damage';
+                const other = (t === 'Other (describe below)' && d.otherDamage) ? `(${d.otherDamage})` : '';
+                const withWhat = d.appliesWith ? ` with ${d.appliesWith}` : '';
+                return `Harmful: +1 ${t}${other}${withWhat}`;
+              }
+            case 'Protective':
+              {
+                const t2 = d.resistType || 'Damage';
+                const other2 = (t2 === 'Other (describe below)' && d.otherDamage) ? `(${d.otherDamage})` : '';
+                return `Protective: -1 shift vs ${t2}${other2}`;
+              }
+            case 'Aspect':
+              {
+                const mode = d.aspectMode || 'Add New Aspect';
+                if (mode === 'Add Free Invoke') {
+                  const n = (typeof d.invokeCount === 'number' ? d.invokeCount : parseInt(d.invokeCount||'1',10)) || 1;
+                  return `Aspect: +${n} invoke(s) to "${d.aspectText||'Aspect'}"`;
+                }
+                return `Aspect: "${d.aspectText||'New Aspect'}"`;
+              }
+            case 'Dominant':
+              {
+                const s2 = d.dominantSkill || '?';
+                const pow2 = (s2 && s2.includes('Power Skill') && d.namedPowerSkill) ? ` (${d.namedPowerSkill})` : '';
+                return `Dominant: ${s2}${pow2} to Paragon scale`;
+              }
+            default:
+              return f.name;
+          }
+        }
+
 
         // Initialize and set up auto-save
         document.addEventListener('DOMContentLoaded', function() {
