@@ -189,17 +189,61 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
             break;
             
         case 'Exceptional':
-        case 'Flexible':
-        case 'Focus':
             content = `
                 <div class="form-group">
-                    <label>Description:</label>
+                    <label>How does this break the rules?</label>
                     <textarea 
                         id="${extraId}_${featureName.replace(/\s+/g, '_')}_desc_${index}"
-                        placeholder="Describe how this ${featureName.toLowerCase()} works..."
+                        placeholder="Describe exactly how this exceptional ability breaks the normal rules once per session..."
                         onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
                         style="width: 100%; height: 60px; resize: vertical;"
                     >${instance.description || ''}</textarea>
+                </div>
+            `;
+            break;
+            
+        case 'Flexible':
+            content = `
+                <div class="form-group">
+                    <label>Use <select onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'skillUsed', this.value)" style="display: inline; width: auto; margin: 0 5px;">
+                        <option value="">skill</option>
+                        <option value="strength" ${instance.skillUsed === 'strength' ? 'selected' : ''}>Strength</option>
+                        <option value="warfare" ${instance.skillUsed === 'warfare' ? 'selected' : ''}>Warfare</option>
+                        <option value="psyche" ${instance.skillUsed === 'psyche' ? 'selected' : ''}>Psyche</option>
+                        <option value="endurance" ${instance.skillUsed === 'endurance' ? 'selected' : ''}>Endurance</option>
+                        <option value="status" ${instance.skillUsed === 'status' ? 'selected' : ''}>Status</option>
+                        <option value="intrigue" ${instance.skillUsed === 'intrigue' ? 'selected' : ''}>Intrigue</option>
+                        <option value="hunting" ${instance.skillUsed === 'hunting' ? 'selected' : ''}>Hunting</option>
+                        <option value="lore" ${instance.skillUsed === 'lore' ? 'selected' : ''}>Lore</option>
+                    </select> in place of <select onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'skillReplaced', this.value)" style="display: inline; width: auto; margin: 0 5px;">
+                        <option value="">skill</option>
+                        <option value="strength" ${instance.skillReplaced === 'strength' ? 'selected' : ''}>Strength</option>
+                        <option value="warfare" ${instance.skillReplaced === 'warfare' ? 'selected' : ''}>Warfare</option>
+                        <option value="psyche" ${instance.skillReplaced === 'psyche' ? 'selected' : ''}>Psyche</option>
+                        <option value="endurance" ${instance.skillReplaced === 'endurance' ? 'selected' : ''}>Endurance</option>
+                        <option value="status" ${instance.skillReplaced === 'status' ? 'selected' : ''}>Status</option>
+                        <option value="intrigue" ${instance.skillReplaced === 'intrigue' ? 'selected' : ''}>Intrigue</option>
+                        <option value="hunting" ${instance.skillReplaced === 'hunting' ? 'selected' : ''}>Hunting</option>
+                        <option value="lore" ${instance.skillReplaced === 'lore' ? 'selected' : ''}>Lore</option>
+                    </select> when:</label>
+                    <input type="text" 
+                           placeholder="e.g., researching ancient families"
+                           value="${instance.circumstance || ''}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'circumstance', this.value)"
+                           style="width: 100%; margin-top: 5px;">
+                </div>
+            `;
+            break;
+            
+        case 'Focus':
+            content = `
+                <div class="form-group">
+                    <label>+2 to a Skill when:</label>
+                    <input type="text" 
+                           placeholder="e.g., using Warfare when fighting in your home domain"
+                           value="${instance.description || ''}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
+                           style="width: 100%;">
                 </div>
             `;
             break;
@@ -211,7 +255,8 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                     <input type="text" 
                            placeholder="e.g., Trump Defense from Trump Artist"
                            value="${instance.ability || ''}"
-                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'ability', this.value)">
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'ability', this.value)"
+                           style="width: 100%;">
                 </div>
             `;
             break;
@@ -224,7 +269,8 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                         <input type="text" 
                                placeholder="Additional details..."
                                value="${instance.description || ''}"
-                               onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)">
+                               onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
+                               style="width: 100%;">
                     </div>
                 `;
             }
@@ -318,10 +364,14 @@ function addFeatureInstance(extraId, featureName) {
             newInstance.skillMods = [];
             break;
         case 'Exceptional':
-        case 'Flexible':
         case 'Focus':
         case 'Technique':
             newInstance.description = '';
+            break;
+        case 'Flexible':
+            newInstance.skillUsed = '';
+            newInstance.skillReplaced = '';
+            newInstance.circumstance = '';
             break;
     }
     
@@ -496,10 +546,14 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
                 newInstance.skillMods = [];
                 break;
             case 'Exceptional':
-            case 'Flexible':
             case 'Focus':
             case 'Technique':
                 newInstance.description = '';
+                break;
+            case 'Flexible':
+                newInstance.skillUsed = '';
+                newInstance.skillReplaced = '';
+                newInstance.circumstance = '';
                 break;
         }
         
@@ -834,12 +888,20 @@ function updateCharacterSummary() {
             } else if (!extra.isSimple && extra.features.length > 0) {
                 const featureGroups = {};
                 extra.features.forEach(f => {
-                    if (!featureGroups[f.name]) featureGroups[f.name] = 0;
-                    featureGroups[f.name]++;
+                    if (!featureGroups[f.name]) featureGroups[f.name] = [];
+                    featureGroups[f.name].push(f);
                 });
-                const featureList = Object.entries(featureGroups).map(([name, count]) => 
-                    count > 1 ? `${name} (×${count})` : name
-                ).join(', ');
+                const featureList = Object.entries(featureGroups).map(([name, instances]) => {
+                    if (instances.length === 1) {
+                        const instance = instances[0];
+                        if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
+                            return `${name} (${instance.skillUsed}→${instance.skillReplaced})`;
+                        }
+                        return name;
+                    } else {
+                        return `${name} (×${instances.length})`;
+                    }
+                }).join(', ');
                 summary += `<p style="margin-left: 20px; font-style: italic;">Features: ${featureList}</p>`;
             }
         });
@@ -1041,17 +1103,32 @@ function exportCharacter() {
                 
                 Object.entries(featureGroups).forEach(([name, instances]) => {
                     if (instances.length === 1) {
+                        const instance = instances[0];
                         output += `  ${name}`;
-                        if (instances[0].description) {
-                            output += `: ${instances[0].description}`;
+                        if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
+                            output += `: Use ${instance.skillUsed} in place of ${instance.skillReplaced}`;
+                            if (instance.circumstance) {
+                                output += ` when ${instance.circumstance}`;
+                            }
+                        } else if (instance.description) {
+                            output += `: ${instance.description}`;
+                        } else if (instance.ability) {
+                            output += `: ${instance.ability}`;
                         }
                         output += '\n';
                     } else {
                         output += `  ${name} (×${instances.length})\n`;
                         instances.forEach((instance, i) => {
                             output += `    #${i + 1}`;
-                            if (instance.description) {
+                            if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
+                                output += `: Use ${instance.skillUsed} in place of ${instance.skillReplaced}`;
+                                if (instance.circumstance) {
+                                    output += ` when ${instance.circumstance}`;
+                                }
+                            } else if (instance.description) {
                                 output += `: ${instance.description}`;
+                            } else if (instance.ability) {
+                                output += `: ${instance.ability}`;
                             }
                             if (instance.skillMods && instance.skillMods.length > 0) {
                                 const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
