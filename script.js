@@ -33,7 +33,8 @@ function addExtra() {
         type: '',
         isSimple: true,
         simpleAspect: '',
-        features: []
+        features: [],
+        isEditing: true // Start in edit mode for new extras
     };
     
     character.extras.push(extra);
@@ -50,15 +51,30 @@ function removeExtra(extraId) {
 
 function renderExtra(extra) {
     const container = document.getElementById('extrasContainer');
-    const extraDiv = document.createElement('div');
-    extraDiv.id = extra.id;
-    extraDiv.className = 'power-category';
-    extraDiv.style.marginBottom = '20px';
+    const extraDiv = document.getElementById(extra.id) || document.createElement('div');
     
-    extraDiv.innerHTML = `
+    if (!extraDiv.id) {
+        extraDiv.id = extra.id;
+        extraDiv.className = 'power-category';
+        extraDiv.style.marginBottom = '20px';
+        container.appendChild(extraDiv);
+    }
+    
+    if (extra.isEditing) {
+        extraDiv.innerHTML = renderExtraEditMode(extra);
+    } else {
+        extraDiv.innerHTML = renderExtraDisplayMode(extra);
+    }
+}
+
+function renderExtraEditMode(extra) {
+    return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0;">Extra: ${extra.name || 'Unnamed'}</h3>
-            <button type="button" class="reset-btn" onclick="removeExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin: 0;">Remove</button>
+            <div>
+                <button type="button" class="export-btn" onclick="saveExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin-right: 5px;">Save</button>
+                <button type="button" class="reset-btn" onclick="removeExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin: 0;">Remove</button>
+            </div>
         </div>
         
         <div class="form-group">
@@ -106,8 +122,75 @@ function renderExtra(extra) {
             <strong>Total Cost: ${calculateExtraCost(extra)} points</strong>
         </div>
     `;
+}
+
+function renderExtraDisplayMode(extra) {
+    const extraName = extra.name || 'Unnamed Extra';
+    const extraType = extra.type ? ` (${extra.type.charAt(0).toUpperCase() + extra.type.slice(1)})` : '';
+    const extraCost = calculateExtraCost(extra);
+    const costText = extraCost > 0 ? ` - ${extraCost} pts` : extraCost < 0 ? ` - Credits ${Math.abs(extraCost)} pts` : '';
     
-    container.appendChild(extraDiv);
+    let details = '';
+    
+    if (extra.isSimple && extra.simpleAspect) {
+        details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspect: ${extra.simpleAspect}</div>`;
+    } else if (!extra.isSimple && extra.features.length > 0) {
+        const featureGroups = {};
+        extra.features.forEach(f => {
+            if (!featureGroups[f.name]) featureGroups[f.name] = [];
+            featureGroups[f.name].push(f);
+        });
+        
+        const featureDetails = Object.entries(featureGroups).map(([name, instances]) => {
+            if (instances.length === 1) {
+                const instance = instances[0];
+                if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
+                    const whenText = instance.circumstance ? ` when ${instance.circumstance}` : '';
+                    return `${name}: Use ${instance.skillUsed} in place of ${instance.skillReplaced}${whenText}`;
+                } else if (name === 'Focus' && instance.skill) {
+                    const whenText = instance.circumstance ? ` when ${instance.circumstance}` : '';
+                    return `${name}: +2 to ${instance.skill}${whenText}`;
+                } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
+                    const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
+                    return `${name}: ${skillList}`;
+                } else if (instance.description) {
+                    return `${name}: ${instance.description}`;
+                } else if (instance.ability) {
+                    return `${name}: ${instance.ability}`;
+                } else {
+                    return name;
+                }
+            } else {
+                return `${name} (×${instances.length})`;
+            }
+        }).join('<br>');
+        
+        details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">${featureDetails}</div>`;
+    }
+    
+    return `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">${extraName}${extraType}${costText}</h3>
+            <div>
+                <button type="button" class="export-btn" onclick="editExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin-right: 5px;">Edit</button>
+                <button type="button" class="reset-btn" onclick="removeExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin: 0;">Remove</button>
+            </div>
+        </div>
+        ${details}
+    `;
+}
+
+function editExtra(extraId) {
+    const extra = character.extras.find(e => e.id === extraId);
+    extra.isEditing = true;
+    renderExtra(extra);
+}
+
+function saveExtra(extraId) {
+    const extra = character.extras.find(e => e.id === extraId);
+    extra.isEditing = false;
+    renderExtra(extra);
+    saveCharacter();
 }
 
 function getSimpleInvokes(type) {
