@@ -238,12 +238,22 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
         case 'Focus':
             content = `
                 <div class="form-group">
-                    <label>+2 to a Skill when:</label>
+                    <label>+2 to <select onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'skill', this.value)" style="display: inline; width: auto; margin: 0 5px;">
+                        <option value="">skill</option>
+                        <option value="strength" ${instance.skill === 'strength' ? 'selected' : ''}>Strength</option>
+                        <option value="warfare" ${instance.skill === 'warfare' ? 'selected' : ''}>Warfare</option>
+                        <option value="psyche" ${instance.skill === 'psyche' ? 'selected' : ''}>Psyche</option>
+                        <option value="endurance" ${instance.skill === 'endurance' ? 'selected' : ''}>Endurance</option>
+                        <option value="status" ${instance.skill === 'status' ? 'selected' : ''}>Status</option>
+                        <option value="intrigue" ${instance.skill === 'intrigue' ? 'selected' : ''}>Intrigue</option>
+                        <option value="hunting" ${instance.skill === 'hunting' ? 'selected' : ''}>Hunting</option>
+                        <option value="lore" ${instance.skill === 'lore' ? 'selected' : ''}>Lore</option>
+                    </select> when:</label>
                     <input type="text" 
-                           placeholder="e.g., using Warfare when fighting in your home domain"
-                           value="${instance.description || ''}"
-                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
-                           style="width: 100%;">
+                           placeholder="e.g., fighting in your home domain"
+                           value="${instance.circumstance || ''}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'circumstance', this.value)"
+                           style="width: 100%; margin-top: 5px;">
                 </div>
             `;
             break;
@@ -311,7 +321,10 @@ function renderSkillModifications(extraId, featureName, instance, instanceIndex)
 
 function addSkillModification(extraId, featureName, instanceIndex) {
     const extra = character.extras.find(e => e.id === extraId);
-    const instance = extra.features.find(f => f.name === featureName && f.instanceIndex === instanceIndex);
+    const instances = extra.features.filter(f => f.name === featureName);
+    const instance = instances[instanceIndex];
+    
+    if (!instance) return; // Safety check
     
     if (!instance.skillMods) instance.skillMods = [];
     instance.skillMods.push({ skill: '', value: 0 });
@@ -325,7 +338,10 @@ function addSkillModification(extraId, featureName, instanceIndex) {
 
 function removeSkillModification(extraId, featureName, instanceIndex, skillIndex) {
     const extra = character.extras.find(e => e.id === extraId);
-    const instance = extra.features.find(f => f.name === featureName && f.instanceIndex === instanceIndex);
+    const instances = extra.features.filter(f => f.name === featureName);
+    const instance = instances[instanceIndex];
+    
+    if (!instance) return; // Safety check
     
     instance.skillMods.splice(skillIndex, 1);
     
@@ -338,7 +354,10 @@ function removeSkillModification(extraId, featureName, instanceIndex, skillIndex
 
 function updateSkillModification(extraId, featureName, instanceIndex, skillIndex, field, value) {
     const extra = character.extras.find(e => e.id === extraId);
-    const instance = extra.features.find(f => f.name === featureName && f.instanceIndex === instanceIndex);
+    const instances = extra.features.filter(f => f.name === featureName);
+    const instance = instances[instanceIndex];
+    
+    if (!instance) return; // Safety check
     
     if (!instance.skillMods) instance.skillMods = [];
     if (!instance.skillMods[skillIndex]) instance.skillMods[skillIndex] = {};
@@ -364,13 +383,16 @@ function addFeatureInstance(extraId, featureName) {
             newInstance.skillMods = [];
             break;
         case 'Exceptional':
-        case 'Focus':
         case 'Technique':
             newInstance.description = '';
             break;
         case 'Flexible':
             newInstance.skillUsed = '';
             newInstance.skillReplaced = '';
+            newInstance.circumstance = '';
+            break;
+        case 'Focus':
+            newInstance.skill = '';
             newInstance.circumstance = '';
             break;
     }
@@ -423,9 +445,10 @@ function removeFeatureInstance(extraId, featureName, instanceIndex) {
 function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, value) {
     const extra = character.extras.find(e => e.id === extraId);
     const instances = extra.features.filter(f => f.name === featureName);
+    const instance = instances[instanceIndex];
     
-    if (instances[instanceIndex]) {
-        instances[instanceIndex][field] = value;
+    if (instance) {
+        instance[field] = value;
         saveCharacter();
     }
 }
@@ -546,13 +569,16 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
                 newInstance.skillMods = [];
                 break;
             case 'Exceptional':
-            case 'Focus':
             case 'Technique':
                 newInstance.description = '';
                 break;
             case 'Flexible':
                 newInstance.skillUsed = '';
                 newInstance.skillReplaced = '';
+                newInstance.circumstance = '';
+                break;
+            case 'Focus':
+                newInstance.skill = '';
                 newInstance.circumstance = '';
                 break;
         }
@@ -896,6 +922,8 @@ function updateCharacterSummary() {
                         const instance = instances[0];
                         if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
                             return `${name} (${instance.skillUsed}→${instance.skillReplaced})`;
+                        } else if (name === 'Focus' && instance.skill) {
+                            return `${name} (+2 ${instance.skill})`;
                         }
                         return name;
                     } else {
@@ -1110,6 +1138,11 @@ function exportCharacter() {
                             if (instance.circumstance) {
                                 output += ` when ${instance.circumstance}`;
                             }
+                        } else if (name === 'Focus' && instance.skill) {
+                            output += `: +2 to ${instance.skill}`;
+                            if (instance.circumstance) {
+                                output += ` when ${instance.circumstance}`;
+                            }
                         } else if (instance.description) {
                             output += `: ${instance.description}`;
                         } else if (instance.ability) {
@@ -1122,6 +1155,11 @@ function exportCharacter() {
                             output += `    #${i + 1}`;
                             if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
                                 output += `: Use ${instance.skillUsed} in place of ${instance.skillReplaced}`;
+                                if (instance.circumstance) {
+                                    output += ` when ${instance.circumstance}`;
+                                }
+                            } else if (name === 'Focus' && instance.skill) {
+                                output += `: +2 to ${instance.skill}`;
                                 if (instance.circumstance) {
                                     output += ` when ${instance.circumstance}`;
                                 }
