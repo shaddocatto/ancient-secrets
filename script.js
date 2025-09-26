@@ -33,6 +33,7 @@ function addExtra() {
         type: '',
         isSimple: true,
         simpleAspect: '',
+        simplePoints: 1,
         features: [],
         isEditing: true // Start in edit mode for new extras
     };
@@ -109,6 +110,13 @@ function renderExtraEditMode(extra) {
                 <label>Aspect:</label>
                 <input type="text" id="${extra.id}_aspect" value="${extra.simpleAspect}" placeholder="e.g., Swift as the Wind, Unbreakable Bond" onchange="updateExtraAspect('${extra.id}')">
             </div>
+            <div class="form-group">
+                <label>Points to Spend:</label>
+                <input type="number" id="${extra.id}_points" min="1" max="10" value="${extra.simplePoints || 1}" onchange="updateExtraPoints('${extra.id}')" style="width: 80px;">
+                <span style="margin-left: 10px; color: #cccccc; font-size: 0.9em;">
+                    = ${getSimpleInvokes(extra.type) * (extra.simplePoints || 1)} invoke(s)
+                </span>
+            </div>
             <div class="heritage-info">
                 <strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.
             </div>
@@ -133,7 +141,9 @@ function renderExtraDisplayMode(extra) {
     let details = '';
     
     if (extra.isSimple && extra.simpleAspect) {
-        details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspect: ${extra.simpleAspect}</div>`;
+        const points = extra.simplePoints || 1;
+        const invokes = getSimpleInvokes(extra.type) * points;
+        details = `<div class="extra-details">Aspect: ${extra.simpleAspect}<br>${invokes} invoke(s) per milestone</div>`;
     } else if (!extra.isSimple && extra.features.length > 0) {
         const featureGroups = {};
         extra.features.forEach(f => {
@@ -165,18 +175,20 @@ function renderExtraDisplayMode(extra) {
             }
         }).join('<br>');
         
-        details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">${featureDetails}</div>`;
+        details = `<div class="extra-details">${featureDetails}</div>`;
     }
     
     return `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin: 0;">${extraName}${extraType}${costText}</h3>
-            <div>
-                <button type="button" class="export-btn" onclick="editExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin-right: 5px;">Edit</button>
-                <button type="button" class="reset-btn" onclick="removeExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin: 0;">Remove</button>
+        <div class="extra-display-mode">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>${extraName}${extraType}${costText}</h3>
+                <div>
+                    <button type="button" class="export-btn" onclick="editExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin-right: 5px;">Edit</button>
+                    <button type="button" class="reset-btn" onclick="removeExtra('${extra.id}')" style="font-size: 0.8em; padding: 5px 10px; margin: 0;">Remove</button>
+                </div>
             </div>
+            ${details}
         </div>
-        ${details}
     `;
 }
 
@@ -412,9 +424,13 @@ function addSkillModification(extraId, featureName, instanceIndex) {
     if (!instance.skillMods) instance.skillMods = [];
     instance.skillMods.push({ skill: '', value: 0 });
     
-    // Re-render the custom options
-    const customDiv = document.getElementById(extraId + '_custom_options');
-    customDiv.innerHTML = renderCustomOptions(extra);
+    // Only re-render if we're in edit mode
+    if (extra.isEditing) {
+        const customDiv = document.getElementById(extraId + '_custom_options');
+        if (customDiv) {
+            customDiv.innerHTML = renderCustomOptions(extra);
+        }
+    }
     
     saveCharacter();
 }
@@ -428,9 +444,13 @@ function removeSkillModification(extraId, featureName, instanceIndex, skillIndex
     
     instance.skillMods.splice(skillIndex, 1);
     
-    // Re-render the custom options
-    const customDiv = document.getElementById(extraId + '_custom_options');
-    customDiv.innerHTML = renderCustomOptions(extra);
+    // Only re-render if we're in edit mode
+    if (extra.isEditing) {
+        const customDiv = document.getElementById(extraId + '_custom_options');
+        if (customDiv) {
+            customDiv.innerHTML = renderCustomOptions(extra);
+        }
+    }
     
     saveCharacter();
 }
@@ -482,13 +502,19 @@ function addFeatureInstance(extraId, featureName) {
     
     extra.features.push(newInstance);
     
-    // Re-render the custom options
-    const customDiv = document.getElementById(extraId + '_custom_options');
-    customDiv.innerHTML = renderCustomOptions(extra);
-    
-    // Update cost display
-    const costDiv = document.querySelector(`#${extraId} .skill-cost`);
-    costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+    // Only re-render custom options if we're in edit mode
+    if (extra.isEditing) {
+        const customDiv = document.getElementById(extraId + '_custom_options');
+        if (customDiv) {
+            customDiv.innerHTML = renderCustomOptions(extra);
+        }
+        
+        // Update cost display
+        const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+        if (costDiv) {
+            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+        }
+    }
     
     updatePointsDisplay();
     saveCharacter();
@@ -505,20 +531,26 @@ function removeFeatureInstance(extraId, featureName, instanceIndex) {
             extra.features.splice(indexToRemove, 1);
         }
         
-        // If no instances left, uncheck the feature
+        // If no instances left, uncheck the feature (only in edit mode)
         const remainingInstances = extra.features.filter(f => f.name === featureName);
-        if (remainingInstances.length === 0) {
+        if (remainingInstances.length === 0 && extra.isEditing) {
             const checkbox = document.querySelector(`#${extraId}_feature_${featureName.replace(/\s+/g, '_')} input[type="checkbox"]`);
             if (checkbox) checkbox.checked = false;
         }
         
-        // Re-render the custom options
-        const customDiv = document.getElementById(extraId + '_custom_options');
-        customDiv.innerHTML = renderCustomOptions(extra);
-        
-        // Update cost display
-        const costDiv = document.querySelector(`#${extraId} .skill-cost`);
-        costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+        // Only re-render custom options if we're in edit mode
+        if (extra.isEditing) {
+            const customDiv = document.getElementById(extraId + '_custom_options');
+            if (customDiv) {
+                customDiv.innerHTML = renderCustomOptions(extra);
+            }
+            
+            // Update cost display
+            const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+            if (costDiv) {
+                costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+            }
+        }
         
         updatePointsDisplay();
         saveCharacter();
@@ -585,11 +617,17 @@ function getAvailableFeatures(type) {
 function updateExtraName(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     const nameInput = document.getElementById(extraId + '_name');
-    extra.name = nameInput.value;
+    if (nameInput) {
+        extra.name = nameInput.value;
+    }
     
-    // Update the header
-    const header = document.querySelector(`#${extraId} h3`);
-    header.textContent = `Extra: ${extra.name || 'Unnamed'}`;
+    // Update the header if we're in edit mode
+    if (extra.isEditing) {
+        const header = document.querySelector(`#${extraId} h3`);
+        if (header) {
+            header.textContent = `Extra: ${extra.name || 'Unnamed'}`;
+        }
+    }
     
     saveCharacter();
 }
@@ -597,17 +635,34 @@ function updateExtraName(extraId) {
 function updateExtraType(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     const typeSelect = document.getElementById(extraId + '_type');
-    extra.type = typeSelect.value;
-    extra.features = []; // Reset features when type changes
+    if (typeSelect) {
+        extra.type = typeSelect.value;
+        extra.features = []; // Reset features when type changes
+    }
     
-    // Re-render the custom options
-    const customDiv = document.getElementById(extraId + '_custom_options');
-    customDiv.innerHTML = renderCustomOptions(extra);
-    
-    // Update simple invokes display
-    const simpleDiv = document.getElementById(extraId + '_simple_options');
-    const heritageInfo = simpleDiv.querySelector('.heritage-info');
-    heritageInfo.innerHTML = `<strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.`;
+    // Only re-render if we're in edit mode
+    if (extra.isEditing) {
+        // Re-render the custom options
+        const customDiv = document.getElementById(extraId + '_custom_options');
+        if (customDiv) {
+            customDiv.innerHTML = renderCustomOptions(extra);
+        }
+        
+        // Update simple invokes display
+        const simpleDiv = document.getElementById(extraId + '_simple_options');
+        if (simpleDiv) {
+            const heritageInfo = simpleDiv.querySelector('.heritage-info');
+            if (heritageInfo) {
+                heritageInfo.innerHTML = `<strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.`;
+            }
+        }
+        
+        // Update cost display
+        const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+        if (costDiv) {
+            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+        }
+    }
     
     updatePointsDisplay();
     saveCharacter();
@@ -617,8 +672,14 @@ function updateExtraMode(extraId, isSimple) {
     const extra = character.extras.find(e => e.id === extraId);
     extra.isSimple = isSimple;
     
-    document.getElementById(extraId + '_simple_options').style.display = isSimple ? 'block' : 'none';
-    document.getElementById(extraId + '_custom_options').style.display = isSimple ? 'none' : 'block';
+    // Only update display if we're in edit mode
+    if (extra.isEditing) {
+        const simpleDiv = document.getElementById(extraId + '_simple_options');
+        const customDiv = document.getElementById(extraId + '_custom_options');
+        
+        if (simpleDiv) simpleDiv.style.display = isSimple ? 'block' : 'none';
+        if (customDiv) customDiv.style.display = isSimple ? 'none' : 'block';
+    }
     
     updatePointsDisplay();
     saveCharacter();
@@ -627,7 +688,32 @@ function updateExtraMode(extraId, isSimple) {
 function updateExtraAspect(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     const aspectInput = document.getElementById(extraId + '_aspect');
-    extra.simpleAspect = aspectInput.value;
+    if (aspectInput) {
+        extra.simpleAspect = aspectInput.value;
+    }
+    saveCharacter();
+}
+
+function updateExtraPoints(extraId) {
+    const extra = character.extras.find(e => e.id === extraId);
+    const pointsInput = document.getElementById(extraId + '_points');
+    if (pointsInput) {
+        extra.simplePoints = parseInt(pointsInput.value) || 1;
+        
+        // Update the invoke display
+        const invokeSpan = pointsInput.parentElement.querySelector('span');
+        if (invokeSpan) {
+            invokeSpan.innerHTML = `= ${getSimpleInvokes(extra.type) * extra.simplePoints} invoke(s)`;
+        }
+        
+        // Update cost display
+        const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+        if (costDiv) {
+            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+        }
+        
+        updatePointsDisplay();
+    }
     saveCharacter();
 }
 
@@ -669,13 +755,20 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
         extra.features.push(newInstance);
     }
     
-    // Re-render to update disabled states
-    const customDiv = document.getElementById(extraId + '_custom_options');
-    customDiv.innerHTML = renderCustomOptions(extra);
-    
-    // Update cost display
-    const costDiv = document.querySelector(`#${extraId} .skill-cost`);
-    costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+    // Only re-render custom options if we're in edit mode
+    if (extra.isEditing) {
+        // Re-render to update disabled states
+        const customDiv = document.getElementById(extraId + '_custom_options');
+        if (customDiv) {
+            customDiv.innerHTML = renderCustomOptions(extra);
+        }
+        
+        // Update cost display
+        const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+        if (costDiv) {
+            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+        }
+    }
     
     updatePointsDisplay();
     saveCharacter();
@@ -685,8 +778,8 @@ function calculateExtraCost(extra) {
     if (!extra.type) return 0;
     
     if (extra.isSimple) {
-        // Simple extras: just 1 point for basic functionality
-        return 1;
+        // Simple extras: points spent = invokes gained
+        return extra.simplePoints || 1;
     } else {
         // Custom extras: sum of all features
         return extra.features.reduce((total, feature) => total + feature.cost, 0);
@@ -993,7 +1086,9 @@ function updateCharacterSummary() {
             summary += `<p><strong>${extraName}${extraType}</strong>${costText}</p>`;
             
             if (extra.isSimple && extra.simpleAspect) {
-                summary += `<p style="margin-left: 20px; font-style: italic;">Aspect: ${extra.simpleAspect}</p>`;
+                const points = extra.simplePoints || 1;
+                const invokes = getSimpleInvokes(extra.type) * points;
+                summary += `<p style="margin-left: 20px; font-style: italic;">Aspect: ${extra.simpleAspect} (${invokes} invokes)</p>`;
             } else if (!extra.isSimple && extra.features.length > 0) {
                 const featureGroups = {};
                 extra.features.forEach(f => {
@@ -1116,6 +1211,17 @@ function loadCharacter() {
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
+            // Ensure all extras have an isEditing state (default to false for loaded extras)
+            // and simplePoints property for backward compatibility
+            character.extras.forEach(extra => {
+                if (extra.isEditing === undefined) {
+                    extra.isEditing = false;
+                }
+                if (extra.simplePoints === undefined) {
+                    extra.simplePoints = 1;
+                }
+            });
+            
             // Clear existing extras display
             document.getElementById('extrasContainer').innerHTML = '';
             
@@ -1204,7 +1310,9 @@ function exportCharacter() {
             output += `${extraName}${extraType}${costText}\n`;
             
             if (extra.isSimple && extra.simpleAspect) {
-                output += `  Aspect: ${extra.simpleAspect}\n`;
+                const points = extra.simplePoints || 1;
+                const invokes = getSimpleInvokes(extra.type) * points;
+                output += `  Aspect: ${extra.simpleAspect} (${invokes} invokes)\n`;
             } else if (!extra.isSimple && extra.features.length > 0) {
                 const featureGroups = {};
                 extra.features.forEach(f => {
