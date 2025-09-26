@@ -797,6 +797,20 @@
 
         let extraIdCounter = 0;
 
+        const debouncedSave = debounce(() => saveCharacter(), 400);
+        const debouncedUpdateSummary = debounce(() => {
+          updatePointsDisplay();   // includes updateCharacterSummary()
+        }, 200);
+
+        // Debounce utility
+        function debounce(fn, delay=300){
+          let t;
+          return (...args) => {
+            clearTimeout(t);
+            t = setTimeout(() => fn(...args), delay);
+          };
+        }
+
         // ===== Editable feature constants & helpers =====
         const SKILL_OPTIONS = [
           "Strength","Warfare","Psyche","Endurance",
@@ -1620,7 +1634,9 @@
               <div class="form-row" style="margin-left: 24px;">
                 <label for="${inputId}" style="min-width: 160px;">${field.label}:</label>
                 <input type="text" id="${inputId}" value="${val}" placeholder="${field.placeholder ?? ''}"
-                       oninput="updateFeatureDetail('${extra.id}','${featureDef.name}','${field.key}', this.value)">
+                       onchange="updateFeatureDetail('${extra.id}','${featureDef.name}','${field.key}', this.value)" 
+                       onblur="updateFeatureDetail('${extra.id}','${featureDef.name}','${field.key}', this.value)"
+                >
               </div>`;
           }).join('');
         
@@ -1632,20 +1648,27 @@
           if (!extra) return;
           const feat = extra.features.find(f => f.name === featureName);
           if (!feat) return;
+        
+          // init details
           feat.details = feat.details || {};
-          // Coerce numbers if needed
-          if (!isNaN(value) && value !== '' && ['invokeCount'].includes(key)) {
-            feat.details[key] = parseInt(value, 10);
+        
+          // Coerce numeric fields
+          if (['invokeCount'].includes(key)) {
+            const num = parseInt(value, 10);
+            feat.details[key] = Number.isFinite(num) ? num : 0;
           } else {
             feat.details[key] = value;
           }
-          // live update cost/summary
-          const customDiv = document.getElementById(extraId + '_custom_options');
-          customDiv.innerHTML = renderCustomOptions(extra);
+        
+          // ⚠️ Do NOT re-render the feature block here — that drops focus.
+          // Just update totals and summary, and save (debounced).
           const costDiv = document.querySelector(`#${extraId} .skill-cost`);
-          costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
-          updatePointsDisplay();
-          saveCharacter();
+          if (costDiv) {
+            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+          }
+        
+          debouncedUpdateSummary();
+          debouncedSave();
         }
 
         function formatFeatureLabel(f){
