@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amber RPG Character Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a0033 0%, #2d0066 50%, #1a0033 100%);
+            color: #ffffe3;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 2px solid #6C3BAA;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #EFBF04, #ffffe3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(239, 191, 4, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6C3BAA;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+
+        .points-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(108, 59, 170, 0.9);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid #EFBF04;
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .points-display h3 {
+            color: #EFBF04;
+            margin-bottom: 10px;
+        }
+
+        .points-remaining {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffffe3;
+        }
+
+        .points-warning {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .section {
+            background: rgba(46, 111, 64, 0.2);
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #2E6F40;
+        }
+
+        .section h2 {
+            color: #EFBF04;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #6C3BAA;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        label {
+            font-weight: bold;
+            color: #ffffe3;
+            margin-bottom: 5px;
+            min-width: 120px;
+        }
+
+        select, input[type="text"], input[type="number"], textarea {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #6C3BAA;
+            border-radius: 5px;
+            padding: 10px;
+            color: #ffffe3;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #EFBF04;
+            box-shadow: 0 0 10px rgba(239, 191, 4, 0.3);
+        }
+
+        select option {
+            background: #1a0033;
+            color: #ffffe3;
+        }
+
+        .skill-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .skill-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #6C3BAA;
+        }
+
+        .skill-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .skill-description {
+            font-size: 0.8em;
+            color: #cccccc;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .skill-cost {
+            font-size: 0.8em;
+            color: #EFBF04;
+            margin-top: 5px;
+        }
+
+        .powers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .power-category {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #6C3BAA;
+        }
+
+        .power-category h3 {
+            color: #EFBF04;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        .power-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(108, 59, 170, 0.1);
+            border-radius: 5px;
+            border-left: 3px solid #6C3BAA;
+        }
+
+        .power-item label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .power-cost {
+            background: #EFBF04;
+            color: #1a0033;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .power-description {
+            font-size: 0.85em;
+            color: #cccccc;
+            margin-top: 5px;
+            padding-left: 25px;
+        }
+
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .success {
+            color: #4ecdc4;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .heritage-info {
+            background: rgba(239, 191, 4, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .export-btn {
+            background: linear-gradient(45deg, #6C3BAA, #EFBF04);
+            color: #1a0033;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(239, 191, 4, 0.4);
+        }
+
+        .save-status {
+            font-size: 0.8em;
+            color: #4ecdc4;
+            margin-top: 5px;
+        }
+
+        .reset-btn {
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-left: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #ff5252;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .points-display {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-bottom: 20px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .skill-container {
+                grid-template-columns: 1fr;
+            }
+
+            .powers-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ancient Secrets</h1>
+        <p class="subtitle">Character Creation System - 60 Points</p>
+        
+        <div class="points-display">
+            <h3>Point Budget</h3>
+            <div class="points-remaining" id="pointsRemaining">60</div>
+            <div id="pointsStatus"></div>
+            <div class="save-status" id="saveStatus">Auto-saving...</div>
+        </div>
+
+        <!-- Heritage Selection -->
+        <div class="section">
+            <h2>Heritage</h2>
+            <div class="form-group">
+                <label for="heritage">Choose your Heritage:</label>
+                <select id="heritage" onchange="updateHeritage()">
+                    <option value="">Select Heritage...</option>
+                    <option value="recognized-amber">Recognized Amber (Free - Court position, Blood Curse, Slow Regeneration, Pattern Adept)</option>
+                    <option value="unrecognized-amber">Unrecognized Amber (+5 pts - Blood Curse, Slow Regeneration, see GM)</option>
+                    <option value="chaos">Chaos (+2 pts - Shapeshifting free)</option>
+                    <option value="both">Both Amber and Chaos (-3 pts - All benefits)</option>
+                    <option value="other">Other (+6 pts - Work with GM)</option>
+                </select>
+                <div id="heritageInfo" class="heritage-info" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Character Aspects -->
+        <div class="section">
+            <h2>Character Aspects</h2>
+            <div class="form-group">
+                <label for="concept">Concept (Who are you? What do you do?):</label>
+                <input type="text" id="concept" placeholder="e.g., Wandering swordsman seeking redemption">
+            </div>
+            <div class="form-group">
+                <label for="position">Position (What are you to the family and court?):</label>
+                <input type="text" id="position" placeholder="e.g., Bastard child seeking recognition">
+            </div>
+            <div class="form-group">
+                <label for="trouble">Trouble (What gets you into trouble?):</label>
+                <input type="text" id="trouble" placeholder="e.g., Cannot resist a challenge to my honor">
+            </div>
+            <div class="form-group">
+                <label for="goal">Goal (What are you trying to get done?):</label>
+                <input type="text" id="goal" placeholder="e.g., Restore the lost Shadow of my mother">
+            </div>
+            <div class="form-group">
+                <label for="secret">Secret (What are you hiding? Free invoke when revealed):</label>
+                <input type="text" id="secret" placeholder="e.g., I am the true heir to the throne of a fallen Shadow">
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="section">
+            <h2>Skills (Max +12)</h2>
+            <p style="margin-bottom: 20px; color: #cccccc;">Costs 1 point for each +1 ranked above Amber (0). Human (-3), Chaos (-1), Amber (0), and above.</p>
+            <div class="skill-container">
+                <div class="skill-item">
+                    <label for="strength">Strength</label>
+                    <div class="skill-description">Physique, athletics, toughness, hand-to-hand combat</div>
+                    <input type="number" id="strength" min="-3" max="12" value="0" onchange="updateSkills()">
+                    <div class="skill-cost" id="strengthCost">Cost: 0 points</div>
+                </div>
+                <div class="skill-item">
+                    <label for="warfare">Warfare</label>
+                    <div class="skill-description">Leadership, tactics, strategy, vehicles, riding, weapons combat</div>
+                    <input type="number" id="warfare" min="-3" max="12" value="0" onchange="updateSkills()">
+                    <div class="skill-cost" id="warfareCost">Cost: 0 points</div>
+                </div>
+                <div class="skill-item">
+                    <label for="psyche">Psyche</label>
+                    <div class="skill-description">Focus, discipline, will, empathy, mystical power and potential</div>
+                    <input type="number" id="psyche" min="-3" max="12" value="0" onchange="updateSkills()">
+                    <div class="skill-cost" id="psycheCost">Cost: 0 points</div>
+                </div>
+                <div class="skill-item">
+                    <label for="endurance">Endurance</label>
+                    <div class="skill-description">Resilience, tenacity, physical/mental reserves, stress</div>
+                    <input type="number" id="endurance" min="-3" max="12" value="0" onchange="updateSkills()">
+                    <div class="skill-cost" id="enduranceCost">Cost: 0 points</div>
+                </div>
+                <div class="skill-item">
+                    <label for="status">Status</label>
+                    <div class="skill-description">Contacts, charm, convincing, reputation, resources, dominion</div>
+                    <input type="number" id="status" min="-3" max="12" value="0" onchange="updateSkills()">
+                    <div class="skill-cost" id="statusCost">Cost: 0 points</div>
+                </div>
+                <div class="skill-item">
+                    <label for="intrigue">Intrigue</label>
+                    <div class="skill-description">Deceit, espionage, secrets, manipulation, leverage, skulduggery</div>
+                    <input type="number" id="intrigue" min="-3" max="12" value="0" onchange="updateSkills()">
+                    <div class="skill-cost" id="intrigueCost">Cost: 0 points</div>
+                </div>
+                <div class="skill-item">
+                    <label for="hunting">Hunting</label>
+                    <div class="skill-description">Train Animal, survival, tracking, riding, ambush, hunting weapons</div>
+                    <input type="number" id="hunting" min="-3" max="12" value="0" onchange="updateSkills()">
+                    <div class="skill-cost" id="huntingCost">Cost: 0 points</div>
+                </div>
+                <div class="skill-item">
+                    <label for="lore">Lore</label>
+                    <div class="skill-description">Knowledge, occult understanding, crafting, engineering, medicine</div>
+                    <input type="number" id="lore" min="-3" max="12" value="0" onchange="updateSkills()">
+                    <div class="skill-cost" id="loreCost">Cost: 0 points</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Powers -->
+        <div class="section">
+            <h2>Powers</h2>
+            <p style="margin-bottom: 20px; color: #cccccc;">All Powers require appropriate Heritage and/or Permission Aspect to access.</p>
+            <div class="powers-grid">
+                <!-- Powers of Order -->
+                <div class="power-category">
+                    <h3>Powers of Order</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="pattern-adept" onchange="updatePowers()" data-cost="5" data-prereq="">
+                            <span class="power-cost">5</span>
+                            Pattern Adept
+                        </label>
+                        <div class="power-description">Requires: Amber Heritage; Amber (0) Endurance. Shadow Travel, Hellride, Shadow of Desire, Resources, Manipulate Probability, Pattern Psychic Defense</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="advanced-pattern" onchange="updatePowers()" data-cost="7" data-prereq="pattern-adept" data-credit="pattern-adept:-5">
+                            <span class="power-cost">7</span>
+                            Advanced Pattern Adept
+                        </label>
+                        <div class="power-description">Requires: Pattern Adept; Amber (0) Psyche. Pattern Lens, Mold Shadow, Walk the Pattern of the mind, Edit Pattern</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="warden-stair" onchange="updatePowers()" data-cost="1" data-credit="pattern-adept:-1">
+                            <span class="power-cost">1</span>
+                            Warden of the Grand Stair
+                        </label>
+                        <div class="power-description">Requires: Amber (0) Psyche. Open and Close Doors, Wayfinding, Piercing Veil, Exegesis</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="master-stair" onchange="updatePowers()" data-cost="3" data-prereq="warden-stair" data-credit="warden-stair:-1">
+                            <span class="power-cost">3</span>
+                            Master of the Grand Stair
+                        </label>
+                        <div class="power-description">Requires: Warden; Amber (0) Psyche, Chaos (-1) Endurance. Ward Doors, Control Doors, Making Keys, Advanced abilities</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="eidolon-mastery" onchange="updatePowers()" data-cost="8" data-credit="pattern-adept:-4,advanced-pattern:-6">
+                            <span class="power-cost">8</span>
+                            Eidolon Mastery
+                        </label>
+                        <div class="power-description">Requires: Amber (0) Psyche. Immortality, Edit reality, Guide reality, Sanctification</div>
+                    </div>
+                </div>
+
+                <!-- Powers of Chaos -->
+                <div class="power-category">
+                    <h3>Powers of Chaos</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="shapeshifting" onchange="updatePowers()" data-cost="3" data-prereq="" data-credit="beast-shifter:-1">
+                            <span class="power-cost">3</span>
+                            Shapeshifting
+                        </label>
+                        <div class="power-description">Requires: Chaos Heritage; Chaos (-1) Strength and Endurance. Assume Known Shape, Automatic Shifting, Demon Form, Healing, Primal Form</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="advanced-shapeshifting" onchange="updatePowers()" data-cost="6" data-prereq="shapeshifting" data-credit="shapeshifting:-3">
+                            <span class="power-cost">6</span>
+                            Advanced Shapeshifting
+                        </label>
+                        <div class="power-description">Requires: Shapeshifting; Amber (0) Strength, Endurance, Psyche. Duplicate Other, Shape Aura, Shape Other</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="logrus-master" onchange="updatePowers()" data-cost="4" data-prereq="shapeshifting">
+                            <span class="power-cost">4</span>
+                            Logrus Master
+                        </label>
+                        <div class="power-description">Requires: Shapeshifting; Chaos Heritage; Amber (0) Psyche, Chaos (-1) Endurance. Logrus Tendrils, Hang Spells, Find in Shadow</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="advanced-logrus" onchange="updatePowers()" data-cost="7" data-prereq="logrus-master" data-credit="logrus-master:-4">
+                            <span class="power-cost">7</span>
+                            Advanced Logrus Master
+                        </label>
+                        <div class="power-description">Requires: Logrus Master; Amber (0) Psyche and Endurance. Alter Shadow, Create Primal Chaos, Logrus Healing</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="umbra-mastery" onchange="updatePowers()" data-cost="8" data-credit="shapeshifting:-2,logrus-master:-3,advanced-logrus:-5">
+                            <span class="power-cost">8</span>
+                            Umbra Mastery
+                        </label>
+                        <div class="power-description">Requires: Amber (0) Psyche. Perceiving Umbra, Control Reality, Evolution, Immortality, Regeneration, Identify Door, Force Door Open</div>
+                    </div>
+                </div>
+
+                <!-- Powers of Art -->
+                <div class="power-category">
+                    <h3>Powers of Art</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="trump-artist" onchange="updatePowers()" data-cost="2" data-prereq="">
+                            <span class="power-cost">2</span>
+                            Trump Artist
+                        </label>
+                        <div class="power-description">Requires: Chaos (-1) Psyche. Create Trump, Identify Trump, Imbue Trump Artifacts, Trump Defense</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="advanced-trump" onchange="updatePowers()" data-cost="4" data-prereq="trump-artist" data-credit="trump-artist:-2">
+                            <span class="power-cost">4</span>
+                            Advanced Trump Artist
+                        </label>
+                        <div class="power-description">Requires: Trump Artist; Amber (0) Psyche. Trump Gate, Trump Jamming, Trump Memory, Trump Trap</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="wrighting" onchange="updatePowers()" data-cost="3" data-credit="trump-artist:-1,advanced-trump:-3">
+                            <span class="power-cost">3</span>
+                            Wrighting
+                        </label>
+                        <div class="power-description">Requires: Amber (0) Psyche. Create Icon, Impromptu Icon, Defense, Creating Icon-Powered Artifacts</div>
+                    </div>
+                </div>
+
+                <!-- Powers of the Abyss -->
+                <div class="power-category">
+                    <h3>Powers of the Abyss</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="abyssal-lord" onchange="updatePowers()" data-cost="4" data-prereq="">
+                            <span class="power-cost">4</span>
+                            Abyssal Lord
+                        </label>
+                        <div class="power-description">Requires: Initiation into the Abyss; Amber (0) Psyche, Chaos (-1) Endurance. Summon/Control Souls/Dead, Abyssal Power, Teleportation</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="abyssal-sovereign" onchange="updatePowers()" data-cost="6" data-prereq="abyssal-lord" data-credit="abyssal-lord:-4">
+                            <span class="power-cost">6</span>
+                            Abyssal Sovereign
+                        </label>
+                        <div class="power-description">Requires: Abyssal Lord; Amber (0) Psyche and Endurance. Create Abyssal Constructs, Imbue with Abyssal Power, Soul Jar</div>
+                    </div>
+                </div>
+
+                <!-- Powers of the Void -->
+                <div class="power-category">
+                    <h3>Powers of the Void</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="undershadow-manipulator" onchange="updatePowers()" data-cost="3" data-prereq="">
+                            <span class="power-cost">3</span>
+                            Undershadow Manipulator
+                        </label>
+                        <div class="power-description">Requires: Amber (0) Psyche, Chaos (-1) Status. Open Portal, Summon/Bind Undershadow Creatures</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="advanced-undershadow" onchange="updatePowers()" data-cost="5" data-prereq="undershadow-manipulator" data-credit="undershadow-manipulator:-3">
+                            <span class="power-cost">5</span>
+                            Advanced Undershadow Manipulator
+                        </label>
+                        <div class="power-description">Requires: Undershadow Manipulator; Amber (0) Psyche and Status. Manipulate Undershadow, Imbue Undershadow, Scry Undershadow</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="keeper-void" onchange="updatePowers()" data-cost="4" data-credit="undershadow-manipulator:-1,advanced-undershadow:-3">
+                            <span class="power-cost">4</span>
+                            Keeper of the Void
+                        </label>
+                        <div class="power-description">Requires: Initiation into the Void; Amber (0) Psyche, Chaos (-1) Endurance. Find rift into Void, Survive Void, Communicate with creatures of the deep, Command Undershadow and Void creatures</div>
+                    </div>
+                </div>
+
+                <!-- Powers of the Tree -->
+                <div class="power-category">
+                    <h3>Powers of the Tree</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="thraell-green" onchange="updatePowers()" data-cost="0" data-prereq="">
+                            <span class="power-cost">Free</span>
+                            Thraell of The Green
+                        </label>
+                        <div class="power-description">Requires: Initiation into the Green; Chaos (-1) Strength and Endurance. Communicate with nature, manifest the Green</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="ally-tree" onchange="updatePowers()" data-cost="3" data-credit="thraell-green:-1">
+                            <span class="power-cost">3</span>
+                            Ally of The Tree
+                        </label>
+                        <div class="power-description">Requires: Mutual agreement; Amber (0) Strength and Endurance. Commune with Green, Travel within Green, Sustain Green</div>
+                    </div>
+                </div>
+
+                <!-- Powers of the Hunger -->
+                <div class="power-category">
+                    <h3>Powers of the Hunger</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="vampiric-affliction" onchange="updatePowers()" data-cost="1" data-prereq="">
+                            <span class="power-cost">1</span>
+                            Vampiric Affliction
+                        </label>
+                        <div class="power-description">Requires: Vampire Heritage; Chaos (-1) Endurance. Enhance using blood, entrance weaker wills, shapeshift, damaged by sunlight</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="advanced-vampiric" onchange="updatePowers()" data-cost="3" data-prereq="vampiric-affliction">
+                            <span class="power-cost">3</span>
+                            Advanced Vampiric Affliction
+                        </label>
+                        <div class="power-description">Requires: Vampiric Affliction; Amber (0) Endurance, Chaos (-1) Strength and Status. Control lesser vampires, invoke Hunger, blood sorcery</div>
+                    </div>
+                </div>
+
+                <!-- Powers of Faerie -->
+                <div class="power-category">
+                    <h3>Powers of Faerie</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="fae-enchanter" onchange="updatePowers()" data-cost="2" data-prereq="">
+                            <span class="power-cost">2</span>
+                            Fae Enchanter
+                        </label>
+                        <div class="power-description">Requires: Faerie Heritage; Chaos (-1) Status and Intrigue. Local Glamour, Binding Promises, Minor Blessings/Curses</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="advanced-fae" onchange="updatePowers()" data-cost="4" data-prereq="fae-enchanter" data-credit="fae-enchanter:-2">
+                            <span class="power-cost">4</span>
+                            Advanced Fae Enchanter
+                        </label>
+                        <div class="power-description">Requires: Faerie Heritage; Amber (0) Status and Intrigue, Chaos (-1) Lore. Widespread Glamour, Major Blessings/Curses</div>
+                    </div>
+                </div>
+
+                <!-- Powers of Magick -->
+                <div class="power-category">
+                    <h3>Powers of Magick</h3>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="sorcery" onchange="updatePowers()" data-cost="3" data-prereq="">
+                            <span class="power-cost">3</span>
+                            Sorcery and Conjuration
+                        </label>
+                        <div class="power-description">Requires: Chaos (-1) Lore and power source. Develop Spell, Cast Spell, Conjure Shadow, Empowerment, Imbue, Create</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="invocation" onchange="updatePowers()" data-cost="3" data-prereq="" data-credit="sorcery:-1">
+                            <span class="power-cost">3</span>
+                            Invocation
+                        </label>
+                        <div class="power-description">Requires: Chaos (-1) Psyche. True Name powers (Divine, Call, Summon, Banish, Compel, Bind), Purification</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="runes" onchange="updatePowers()" data-cost="3" data-prereq="">
+                            <span class="power-cost">3</span>
+                            The Runes
+                        </label>
+                        <div class="power-description">Requires: Ranked (+1) Lore. Enhance/diminish powers, create/break connections, alter local reality</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="mirror-enchantment" onchange="updatePowers()" data-cost="2" data-prereq="">
+                            <span class="power-cost">2</span>
+                            Mirror Enchantment
+                        </label>
+                        <div class="power-description">Requires: Shroudling/Vampire Heritage; Chaos (-1) Psyche and Lore. Enchanted mirrors, travel mirror-lands, call forth reflections</div>
+                    </div>
+                </div>
+
+                <!-- Powers of the Ancients -->
+                <div class="power-category">
+                    <h3>Powers of the Ancients</h3>
+                    <p style="font-size: 0.8em; color: #EFBF04; margin-bottom: 10px; text-align: center;">GM Approval Required</p>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="dominion" onchange="updatePowers()" data-cost="0" data-prereq="">
+                            <span class="power-cost">GM</span>
+                            Dominion
+                        </label>
+                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Establish Domain, Empower Domain, Control Domain</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="essence" onchange="updatePowers()" data-cost="0" data-prereq="">
+                            <span class="power-cost">GM</span>
+                            Essence
+                        </label>
+                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Strength and Endurance. True Form (Invoke, Reveal, Empower), Banner Control</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="song" onchange="updatePowers()" data-cost="0" data-prereq="">
+                            <span class="power-cost">GM</span>
+                            Song
+                        </label>
+                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Join The Song, Guide The Song, Add To The Song</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="making" onchange="updatePowers()" data-cost="0" data-prereq="">
+                            <span class="power-cost">GM</span>
+                            Making
+                        </label>
+                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Create Substance, Create Essence, Enhance Existence</div>
+                    </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="unmaking" onchange="updatePowers()" data-cost="0" data-prereq="">
+                            <span class="power-cost">GM</span>
+                            Unmaking
+                        </label>
+                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Destroy Substance, Destroy Essence, Destroy Existence</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Summary -->
+        <div class="section">
+            <h2>Character Summary</h2>
+            <div id="characterSummary">
+                <p>Select heritage, skills, and powers to see your character summary.</p>
+            </div>
+        </div>
+
+        <!-- Export -->
+        <div class="export-section">
+            <button class="export-btn" onclick="exportCharacter()">Export Character</button>
+            <button class="reset-btn" onclick="resetCharacter()">Reset All</button>
+        </div>
+    </div>
+
+    <script>
+        let character = {
+            heritage: '',
+            concept: '',
+            position: '',
+            trouble: '',
+            goal: '',
+            secret: '',
+            skills: {
+                strength: 0,
+                warfare: 0,
+                psyche: 0,
+                endurance: 0,
+                status: 0,
+                intrigue: 0,
+                hunting: 0,
+                lore: 0
+            },
+            powers: [],
+            totalPoints: 60,
+            usedPoints: 0
+        };
+
+        // Auto-save functionality
+        function saveCharacter() {
+            try {
+                // Save form values
+                const saveData = {
+                    ...character,
+                    concept: document.getElementById('concept').value,
+                    position: document.getElementById('position').value,
+                    trouble: document.getElementById('trouble').value,
+                    goal: document.getElementById('goal').value,
+                    secret: document.getElementById('secret').value,
+                    formValues: {
+                        heritage: document.getElementById('heritage').value,
+                        skills: {},
+                        powers: {}
+                    }
+                };
+
+                // Save skill values
+                const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
+                skills.forEach(skill => {
+                    saveData.formValues.skills[skill] = document.getElementById(skill).value;
+                });
+
+                // Save power selections
+                const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
+                powerElements.forEach(element => {
+                    saveData.formValues.powers[element.id] = element.checked;
+                });
+
+                localStorage.setItem('amberCharacter', JSON.stringify(saveData));
+                document.getElementById('saveStatus').textContent = 'Saved ✓';
+                setTimeout(() => {
+                    document.getElementById('saveStatus').textContent = '';
+                }, 2000);
+            } catch (error) {
+                console.error('Save failed:', error);
+                document.getElementById('saveStatus').textContent = 'Save failed!';
+            }
+        }
+
+        function loadCharacter() {
+            try {
+                const saved = localStorage.getItem('amberCharacter');
+                if (!saved) return;
+
+                const saveData = JSON.parse(saved);
+                
+                // Restore form values
+                if (saveData.concept) document.getElementById('concept').value = saveData.concept;
+                if (saveData.position) document.getElementById('position').value = saveData.position;
+                if (saveData.trouble) document.getElementById('trouble').value = saveData.trouble;
+                if (saveData.goal) document.getElementById('goal').value = saveData.goal;
+                if (saveData.secret) document.getElementById('secret').value = saveData.secret;
+
+                // Restore heritage
+                if (saveData.formValues && saveData.formValues.heritage) {
+                    document.getElementById('heritage').value = saveData.formValues.heritage;
+                    updateHeritage();
+                }
+
+                // Restore skills
+                if (saveData.formValues && saveData.formValues.skills) {
+                    Object.entries(saveData.formValues.skills).forEach(([skill, value]) => {
+                        if (document.getElementById(skill)) {
+                            document.getElementById(skill).value = value;
+                        }
+                    });
+                    updateSkills();
+                }
+
+                // Restore powers
+                if (saveData.formValues && saveData.formValues.powers) {
+                    Object.entries(saveData.formValues.powers).forEach(([powerId, checked]) => {
+                        const element = document.getElementById(powerId);
+                        if (element) {
+                            element.checked = checked;
+                        }
+                    });
+                    updatePowers();
+                }
+
+                document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
+                setTimeout(() => {
+                    document.getElementById('saveStatus').textContent = '';
+                }, 3000);
+            } catch (error) {
+                console.error('Load failed:', error);
+            }
+        }
+
+        function resetCharacter() {
+            if (confirm('Are you sure you want to reset all character data? This cannot be undone.')) {
+                localStorage.removeItem('amberCharacter');
+                location.reload();
+            }
+        }
+
+        function updateHeritage() {
+            const heritage = document.getElementById('heritage').value;
+            const heritageInfo = document.getElementById('heritageInfo');
+            
+            character.heritage = heritage;
+            
+            let heritageDescription = '';
+            let heritagePoints = 0;
+            
+            switch(heritage) {
+                case 'recognized-amber':
+                    heritageDescription = 'Free Pattern Adept power. Gains Court position, Blood Curse, and Slow Regeneration.';
+                    heritagePoints = 0;
+                    // Auto-enable Pattern Adept
+                    document.getElementById('pattern-adept').checked = true;
+                    document.getElementById('pattern-adept').disabled = true;
+                    break;
+                case 'unrecognized-amber':
+                    heritageDescription = 'Gain 5 points. Has Blood Curse and Slow Regeneration. Work with GM for details.';
+                    heritagePoints = 5;
+                    break;
+                case 'chaos':
+                    heritageDescription = 'Gain 2 points. Free Shapeshifting power.';
+                    heritagePoints = 2;
+                    // Auto-enable Shapeshifting
+                    document.getElementById('shapeshifting').checked = true;
+                    document.getElementById('shapeshifting').disabled = true;
+                    break;
+                case 'both':
+                    heritageDescription = 'Costs 3 points. Recognized status, Court position, Blood Curse, Slow Regeneration, Pattern, and Shapeshifting.';
+                    heritagePoints = -3;
+                    // Auto-enable both Pattern and Shapeshifting
+                    document.getElementById('pattern-adept').checked = true;
+                    document.getElementById('pattern-adept').disabled = true;
+                    document.getElementById('shapeshifting').checked = true;
+                    document.getElementById('shapeshifting').disabled = true;
+                    break;
+                case 'other':
+                    heritageDescription = 'Gain 6 points. Work with GM to create custom heritage.';
+                    heritagePoints = 6;
+                    break;
+                default:
+                    heritageDescription = '';
+                    heritagePoints = 0;
+                    // Re-enable powers
+                    document.getElementById('pattern-adept').disabled = false;
+                    document.getElementById('shapeshifting').disabled = false;
+                    break;
+            }
+            
+            if (heritageDescription) {
+                heritageInfo.innerHTML = heritageDescription;
+                heritageInfo.style.display = 'block';
+            } else {
+                heritageInfo.style.display = 'none';
+            }
+            
+            character.totalPoints = 60 + heritagePoints;
+            updatePointsDisplay();
+            updatePowers();
+            saveCharacter();
+        }
+
+        function updateSkills() {
+            const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
+            
+            skills.forEach(skill => {
+                const value = parseInt(document.getElementById(skill).value) || 0;
+                character.skills[skill] = value;
+                
+                // Calculate cost (only positive values above 0 cost points)
+                const cost = Math.max(0, value);
+                document.getElementById(skill + 'Cost').textContent = `Cost: ${cost} points`;
+            });
+            
+            updatePointsDisplay();
+            saveCharacter();
+        }
+
+        function updatePowers() {
+            const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
+            character.powers = [];
+            
+            powerElements.forEach(element => {
+                if (element.checked) {
+                    character.powers.push({
+                        id: element.id,
+                        cost: parseInt(element.dataset.cost),
+                        prereq: element.dataset.prereq,
+                        credit: element.dataset.credit
+                    });
+                }
+            });
+            
+            // Check prerequisites and enable/disable powers
+            powerElements.forEach(element => {
+                const prereq = element.dataset.prereq;
+                if (prereq && !element.disabled) {
+                    const prereqMet = document.getElementById(prereq).checked;
+                    element.parentElement.parentElement.classList.toggle('disabled', !prereqMet);
+                    if (!prereqMet && element.checked) {
+                        element.checked = false;
+                    }
+                }
+            });
+            
+            updatePointsDisplay();
+            saveCharacter();
+        }
+
+        function calculateUsedPoints() {
+            let total = 0;
+            
+            // Calculate skill costs
+            Object.values(character.skills).forEach(value => {
+                total += Math.max(0, value);
+            });
+            
+            // Calculate power costs with credits
+            character.powers.forEach(power => {
+                // Skip Ancient powers (GM determined cost)
+                if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
+                    return;
+                }
+                
+                total += power.cost;
+                
+                // Apply credits
+                if (power.credit) {
+                    const credits = power.credit.split(',');
+                    credits.forEach(credit => {
+                        const [powerName, creditValue] = credit.split(':');
+                        const hasPowerForCredit = character.powers.some(p => p.id === powerName);
+                        if (hasPowerForCredit) {
+                            total += parseInt(creditValue); // creditValue is already negative
+                        }
+                    });
+                }
+            });
+            
+            return total;
+        }
+
+        function updatePointsDisplay() {
+            character.usedPoints = calculateUsedPoints();
+            const remaining = character.totalPoints - character.usedPoints;
+            
+            document.getElementById('pointsRemaining').textContent = remaining;
+            
+            const statusDiv = document.getElementById('pointsStatus');
+            if (remaining < 0) {
+                statusDiv.innerHTML = '<div class="points-warning">Over Budget!</div>';
+                document.getElementById('pointsRemaining').className = 'points-remaining points-warning';
+            } else if (remaining === 0) {
+                statusDiv.innerHTML = '<div class="success">Perfect!</div>';
+                document.getElementById('pointsRemaining').className = 'points-remaining';
+            } else {
+                statusDiv.innerHTML = '';
+                document.getElementById('pointsRemaining').className = 'points-remaining';
+            }
+            
+            updateCharacterSummary();
+        }
+
+        function updateCharacterSummary() {
+            const summaryDiv = document.getElementById('characterSummary');
+            
+            let summary = '<h3>Character Overview</h3>';
+            
+            if (character.heritage) {
+                summary += `<p><strong>Heritage:</strong> ${character.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>`;
+            }
+            
+            // Skills summary
+            summary += '<h4>Skills</h4>';
+            Object.entries(character.skills).forEach(([skill, value]) => {
+                if (value !== 0) {
+                    summary += `<p><strong>${skill.charAt(0).toUpperCase() + skill.slice(1)}:</strong> ${value >= 0 ? '+' : ''}${value}</p>`;
+                }
+            });
+            
+            // Powers summary
+            if (character.powers.length > 0) {
+                summary += '<h4>Powers</h4>';
+                let hasAncientPowers = false;
+                character.powers.forEach(power => {
+                    const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
+                        summary += `<p><strong>${powerName}</strong> (GM approval required)</p>`;
+                        hasAncientPowers = true;
+                    } else {
+                        summary += `<p><strong>${powerName}</strong> (${power.cost} pts)</p>`;
+                    }
+                });
+                
+                if (hasAncientPowers) {
+                    summary += '<p style="color: #EFBF04; font-style: italic;">Note: Ancient powers require GM approval and custom point costs.</p>';
+                }
+            }
+            
+            summary += `<h4>Point Allocation</h4>`;
+            summary += `<p><strong>Total Available:</strong> ${character.totalPoints}</p>`;
+            summary += `<p><strong>Used:</strong> ${character.usedPoints}</p>`;
+            summary += `<p><strong>Good Stuff Rating:</strong> ${character.totalPoints - character.usedPoints}</p>`;
+            
+            summaryDiv.innerHTML = summary;
+        }
+
+        function exportCharacter() {
+            // Collect all form data
+            const exportData = {
+                ...character,
+                concept: document.getElementById('concept').value,
+                position: document.getElementById('position').value,
+                trouble: document.getElementById('trouble').value,
+                goal: document.getElementById('goal').value,
+                secret: document.getElementById('secret').value
+            };
+            
+            // Create a formatted text version
+            let output = '=== AMBER RPG CHARACTER SHEET ===\n\n';
+            output += `Heritage: ${exportData.heritage}\n`;
+            output += `Concept: ${exportData.concept}\n`;
+            output += `Position: ${exportData.position}\n`;
+            output += `Trouble: ${exportData.trouble}\n`;
+            output += `Goal: ${exportData.goal}\n`;
+            output += `Secret: ${exportData.secret}\n\n`;
+            
+            output += '=== SKILLS ===\n';
+            Object.entries(exportData.skills).forEach(([skill, value]) => {
+                output += `${skill.charAt(0).toUpperCase() + skill.slice(1)}: ${value >= 0 ? '+' : ''}${value}\n`;
+            });
+            
+            if (exportData.powers.length > 0) {
+                output += '\n=== POWERS ===\n';
+                exportData.powers.forEach(power => {
+                    const powerName = power.id.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    output += `${powerName} (${power.cost} pts)\n`;
+                });
+            }
+            
+            output += `\n=== POINT SUMMARY ===\n`;
+            output += `Total Available: ${exportData.totalPoints}\n`;
+            output += `Used: ${exportData.usedPoints}\n`;
+            output += `Good Stuff Rating: ${exportData.totalPoints - exportData.usedPoints}\n`;
+            
+            // Create downloadable file
+            const blob = new Blob([output], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'amber-character.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize and set up auto-save
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCharacter();
+            updatePointsDisplay();
+            
+            // Add event listeners for text inputs
+            const textInputs = ['concept', 'position', 'trouble', 'goal', 'secret'];
+            textInputs.forEach(inputId => {
+                const element = document.getElementById(inputId);
+                if (element) {
+                    element.addEventListener('input', saveCharacter);
+                    element.addEventListener('blur', saveCharacter);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
