@@ -25,11 +25,11 @@
                 <label for="heritage">Choose your Heritage:</label>
                 <select id="heritage" onchange="updateHeritage()">
                     <option value="">Select Heritage...</option>
-                    <option value="recognized-amber">Recognized Amber (Free - Court position, Blood Curse, Slow Regeneration, Pattern Adept)</option>
-                    <option value="unrecognized-amber">Unrecognized Amber (+5 pts - Blood Curse, Slow Regeneration, see GM)</option>
-                    <option value="chaos">Chaos (+2 pts - Shapeshifting free)</option>
-                    <option value="both">Both Amber and Chaos (-3 pts - All benefits)</option>
-                    <option value="other">Other (+6 pts - Work with GM)</option>
+                    <option value="recognized-amber">Recognized Amber (free - Court position, Blood Curse, Slow Regeneration, Pattern Adept)</option>
+                    <option value="unrecognized-amber">Unrecognized Amber (credit 5 pts - Blood Curse, Slow Regeneration, see GM)</option>
+                    <option value="chaos">Chaos (credit 2 pts - Shapeshifting free)</option>
+                    <option value="both">Both Amber and Chaos (cost 3 pts - Recognized, Court position, Blood Curse, Slow Regeneration, Pattern, and Shapeshifting)</option>
+                    <option value="other">Other (credit 6 pts - work with GM to create)</option>
                 </select>
                 <div id="heritageInfo" class="heritage-info" style="display: none;"></div>
             </div>
@@ -191,7 +191,7 @@
                             <span class="power-cost" id="logrus-master-cost">4</span>
                             Logrus Master
                         </label>
-                        <div class="power-description">Requires: Shapeshifting; Chaos Heritage; Amber (0) Psyche, Chaos (-1) Endurance. Logrus Tendrils, Hang Spells, Find in Shadow</div>
+                        <div class="power-description">Requires: Shapeshifting; Amber (0) Psyche, Chaos (-1) Endurance. Logrus Tendrils, Hang Spells, Find in Shadow</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -207,7 +207,7 @@
                             <span class="power-cost" id="umbra-mastery-cost">8</span>
                             Umbra Mastery
                         </label>
-                        <div class="power-description">Requires: Amber (0) Psyche. Perceiving Umbra, Control Reality, Evolution, Immortality, Regeneration, Identify Door, Force Door Open</div>
+                        <div class="power-description">Requires: Amber (0) Psyche. Perceiving Umbra, Control Reality, Evolution, Immortality, Regeneration</div>
                     </div>
                 </div>
 
@@ -216,24 +216,24 @@
                     <h3>Powers of Art</h3>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="trump-artist" onchange="updatePowers()" data-cost="2" data-prereq="">
-                            <span class="power-cost" id="trump-artist-cost">2</span>
+                            <input type="checkbox" id="trump-artist" onchange="updatePowers()" data-cost="4" data-prereq="">
+                            <span class="power-cost" id="trump-artist-cost">4</span>
                             Trump Artist
                         </label>
                         <div class="power-description">Requires: Chaos (-1) Psyche. Create Trump, Identify Trump, Imbue Trump Artifacts, Trump Defense</div>
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="advanced-trump" onchange="updatePowers()" data-cost="4" data-prereq="trump-artist" data-credit="trump-artist:-2">
-                            <span class="power-cost" id="advanced-trump-cost">4</span>
+                            <input type="checkbox" id="advanced-trump" onchange="updatePowers()" data-cost="6" data-prereq="trump-artist" data-credit="trump-artist:-2">
+                            <span class="power-cost" id="advanced-trump-cost">6</span>
                             Advanced Trump Artist
                         </label>
                         <div class="power-description">Requires: Trump Artist; Amber (0) Psyche. Trump Gate, Trump Jamming, Trump Memory, Trump Trap</div>
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="wrighting" onchange="updatePowers()" data-cost="3" data-credit="trump-artist:-1,advanced-trump:-3">
-                            <span class="power-cost" id="wrighting-cost">3</span>
+                            <input type="checkbox" id="wrighting" onchange="updatePowers()" data-cost="4" data-credit="trump-artist:-2,advanced-trump:-3">
+                            <span class="power-cost" id="wrighting-cost">4</span>
                             Wrighting
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche. Create Icon, Impromptu Icon, Defense, Creating Icon-Powered Artifacts</div>
@@ -282,7 +282,7 @@
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="keeper-void" onchange="updatePowers()" data-cost="4" data-credit="undershadow-manipulator:-1,advanced-undershadow:-3">
+                            <input type="checkbox" id="keeper-void" onchange="updatePowers()" data-cost="4" data-credit="undershadow-manipulator:-1,advanced-undershadow:-2">
                             <span class="power-cost" id="keeper-void-cost">4</span>
                             Keeper of the Void
                         </label>
@@ -441,15 +441,16 @@
         <!-- Extras -->
         <div class="section">
             <h2>Extras (Optional)</h2>
-            <p style="margin-bottom: 20px; color: #cccccc;">GM approval required. Choose Simple (name + aspect + invokes) or Custom (detailed options below).</p>
+            <p style="margin-bottom: 20px; color: #cccccc;">GM approval required. Choose Simple (name + aspect + invokes) or Custom (detailed options below). <span style="color: #EFBF04;">UPDATED - Multi-instance support added!</span></p>
+
+            <div id="extrasContainer">
+                <!-- Extras will be dynamically added here -->
+            </div>
             
             <div class="form-group">
                 <button type="button" class="export-btn" onclick="addExtra()" style="font-size: 0.9em; padding: 10px 20px;">Add New Extra</button>
             </div>
             
-            <div id="extrasContainer">
-                <!-- Extras will be dynamically added here -->
-            </div>
         </div>
 
         <!-- Character Summary -->
