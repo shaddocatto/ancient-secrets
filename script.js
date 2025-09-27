@@ -711,7 +711,6 @@ function updateHeritage() {
     character.heritage = heritage;
     
     let heritageDescription = '';
-    let heritagePoints = 0;
     
     // Reset heritage-specific power states
     document.getElementById('pattern-adept').disabled = false;
@@ -720,25 +719,21 @@ function updateHeritage() {
     switch(heritage) {
         case 'recognized-amber':
             heritageDescription = 'Free Pattern Adept power. Gains Court position, Blood Curse, and Slow Regeneration.';
-            heritagePoints = 0;
             // Auto-enable Pattern Adept
             document.getElementById('pattern-adept').checked = true;
             document.getElementById('pattern-adept').disabled = true;
             break;
         case 'unrecognized-amber':
             heritageDescription = 'Gain 5 points. Has Blood Curse and Slow Regeneration. Work with GM for details.';
-            heritagePoints = 5;
             break;
         case 'chaos':
             heritageDescription = 'Gain 2 points. Free Shapeshifting power.';
-            heritagePoints = 2;
             // Auto-enable Shapeshifting
             document.getElementById('shapeshifting').checked = true;
             document.getElementById('shapeshifting').disabled = true;
             break;
         case 'both':
             heritageDescription = 'Costs 3 points. Recognized status, Court position, Blood Curse, Slow Regeneration, Pattern, and Shapeshifting.';
-            heritagePoints = -3;
             // Auto-enable both Pattern and Shapeshifting
             document.getElementById('pattern-adept').checked = true;
             document.getElementById('pattern-adept').disabled = true;
@@ -747,11 +742,9 @@ function updateHeritage() {
             break;
         case 'other':
             heritageDescription = 'Gain 6 points. Work with GM to create custom heritage.';
-            heritagePoints = 6;
             break;
         default:
             heritageDescription = '';
-            heritagePoints = 0;
             break;
     }
     
@@ -762,7 +755,7 @@ function updateHeritage() {
         heritageInfo.style.display = 'none';
     }
     
-    character.totalPoints = 60 + heritagePoints;
+    character.totalPoints = 60; // Keep total at 60, treat heritage as spending
     updatePointsDisplay();
     updatePowers();
     saveCharacter();
@@ -875,6 +868,27 @@ function isHeritageFreePower(powerId) {
 // Points calculation
 function calculateUsedPoints() {
     let total = 0;
+    
+    // Calculate heritage costs
+    const heritage = character.heritage;
+    switch(heritage) {
+        case 'unrecognized-amber':
+            total -= 5; // Gain 5 points (negative cost)
+            break;
+        case 'chaos':
+            total -= 2; // Gain 2 points (negative cost)
+            break;
+        case 'both':
+            total += 3; // Costs 3 points
+            break;
+        case 'other':
+            total -= 6; // Gain 6 points (negative cost)
+            break;
+        case 'recognized-amber':
+        default:
+            // No point cost
+            break;
+    }
     
     // Calculate skill costs
     Object.values(character.skills).forEach(value => {
@@ -1030,6 +1044,69 @@ function updateCharacterSummary() {
     
     summary += `<h4>Point Allocation</h4>`;
     summary += `<p><strong>Total Available:</strong> ${character.totalPoints}</p>`;
+    
+    // Break down spending
+    let skillsCost = 0;
+    Object.values(character.skills).forEach(value => {
+        skillsCost += Math.max(0, value);
+    });
+    
+    let powersCost = 0;
+    character.powers.forEach(power => {
+        if (['dominion', 'essence', 'song'].includes(power.id)) {
+            return; // Skip ancient powers
+        }
+        let powerCost = power.cost;
+        if (isHeritageFreePower(power.id)) {
+            powerCost = 0;
+        } else if (power.credit) {
+            const credits = power.credit.split(',');
+            credits.forEach(credit => {
+                const [powerName, creditValue] = credit.split(':');
+                const hasPowerForCredit = character.powers.some(p => p.id === powerName);
+                if (hasPowerForCredit) {
+                    powerCost += parseInt(creditValue);
+                }
+            });
+        }
+        powersCost += Math.max(0, powerCost);
+    });
+    
+    let extrasCost = 0;
+    character.extras.forEach(extra => {
+        extrasCost += calculateExtraCost(extra);
+    });
+    
+    let heritageCost = 0;
+    const heritage = character.heritage;
+    switch(heritage) {
+        case 'unrecognized-amber':
+            heritageCost = -5;
+            break;
+        case 'chaos':
+            heritageCost = -2;
+            break;
+        case 'both':
+            heritageCost = 3;
+            break;
+        case 'other':
+            heritageCost = -6;
+            break;
+    }
+    
+    if (heritageCost !== 0) {
+        summary += `<p><strong>Heritage:</strong> ${heritageCost >= 0 ? heritageCost : `+${Math.abs(heritageCost)}`} pts</p>`;
+    }
+    if (skillsCost > 0) {
+        summary += `<p><strong>Skills:</strong> ${skillsCost} pts</p>`;
+    }
+    if (powersCost > 0) {
+        summary += `<p><strong>Powers:</strong> ${powersCost} pts</p>`;
+    }
+    if (extrasCost > 0) {
+        summary += `<p><strong>Extras:</strong> ${extrasCost} pts</p>`;
+    }
+    
     summary += `<p><strong>Used:</strong> ${character.usedPoints}</p>`;
     summary += `<p><strong>Good Stuff Rating:</strong> ${character.totalPoints - character.usedPoints}</p>`;
     
@@ -1274,7 +1351,29 @@ function exportCharacter() {
     }
     
     output += `\n=== POINT SUMMARY ===\n`;
+    
+    // Calculate heritage cost
+    let heritageCost = 0;
+    const heritage = exportData.heritage;
+    switch(heritage) {
+        case 'unrecognized-amber':
+            heritageCost = -5;
+            break;
+        case 'chaos':
+            heritageCost = -2;
+            break;
+        case 'both':
+            heritageCost = 3;
+            break;
+        case 'other':
+            heritageCost = -6;
+            break;
+    }
+    
     output += `Total Available: ${exportData.totalPoints}\n`;
+    if (heritageCost !== 0) {
+        output += `Heritage: ${heritageCost >= 0 ? heritageCost : `+${Math.abs(heritageCost)}`} pts\n`;
+    }
     output += `Used: ${exportData.usedPoints}\n`;
     output += `Good Stuff Rating: ${exportData.totalPoints - exportData.usedPoints}\n`;
     
