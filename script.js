@@ -32,7 +32,7 @@ function addExtra() {
         name: '',
         type: '',
         isSimple: true,
-        simpleAspect: '',
+        simpleAspects: [], // Changed to array to allow multiple aspects
         features: [],
         isEditing: true // Start in edit mode for new extras
     };
@@ -97,7 +97,7 @@ function renderExtraEditMode(extra) {
         <div class="form-group">
             <label>
                 <input type="radio" name="${extra.id}_simple" value="true" ${extra.isSimple ? 'checked' : ''} onchange="updateExtraMode('${extra.id}', true)">
-                Simple (Name + Aspect + Invokes)
+                Simple (Name + Aspects + Invokes)
             </label>
             <label>
                 <input type="radio" name="${extra.id}_simple" value="false" ${!extra.isSimple ? 'checked' : ''} onchange="updateExtraMode('${extra.id}', false)">
@@ -106,10 +106,7 @@ function renderExtraEditMode(extra) {
         </div>
         
         <div id="${extra.id}_simple_options" style="display: ${extra.isSimple ? 'block' : 'none'};">
-            <div class="form-group">
-                <label>Aspect:</label>
-                <input type="text" id="${extra.id}_aspect" value="${extra.simpleAspect}" placeholder="e.g., Swift as the Wind, Unbreakable Bond" onchange="updateExtraAspect('${extra.id}')">
-            </div>
+            ${renderSimpleAspects(extra)}
             <div class="heritage-info">
                 <strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.
             </div>
@@ -125,6 +122,60 @@ function renderExtraEditMode(extra) {
     `;
 }
 
+function renderSimpleAspects(extra) {
+    if (!extra.simpleAspects) extra.simpleAspects = [];
+    
+    let html = '<div class="form-group"><label>Aspects:</label>';
+    
+    extra.simpleAspects.forEach((aspect, index) => {
+        html += `
+            <div style="display: flex; gap: 10px; margin: 5px 0;">
+                <input type="text" value="${aspect}" placeholder="e.g., Swift as the Wind, Unbreakable Bond" 
+                       onchange="updateSimpleAspect('${extra.id}', ${index}, this.value)" style="flex: 1;">
+                <button type="button" class="remove-instance-btn" onclick="removeSimpleAspect('${extra.id}', ${index})">×</button>
+            </div>
+        `;
+    });
+    
+    html += `<button type="button" class="add-instance-btn" onclick="addSimpleAspect('${extra.id}')" style="margin-top: 5px;">Add Aspect (${getAspectCost(extra.type)} pts each)</button>`;
+    html += '</div>';
+    
+    return html;
+}
+
+function addSimpleAspect(extraId) {
+    const extra = character.extras.find(e => e.id === extraId);
+    if (!extra.simpleAspects) extra.simpleAspects = [];
+    extra.simpleAspects.push('');
+    renderExtra(extra);
+    updatePointsDisplay();
+    saveCharacter();
+}
+
+function removeSimpleAspect(extraId, index) {
+    const extra = character.extras.find(e => e.id === extraId);
+    extra.simpleAspects.splice(index, 1);
+    renderExtra(extra);
+    updatePointsDisplay();
+    saveCharacter();
+}
+
+function updateSimpleAspect(extraId, index, value) {
+    const extra = character.extras.find(e => e.id === extraId);
+    extra.simpleAspects[index] = value;
+    saveCharacter();
+}
+
+function getAspectCost(type) {
+    switch(type) {
+        case 'domain': return 0.25;
+        case 'ally':
+        case 'item':
+        case 'mastery':
+        default: return 0.5;
+    }
+}
+
 function renderExtraDisplayMode(extra) {
     const extraName = extra.name || 'Unnamed Extra';
     const extraType = extra.type ? ` (${extra.type.charAt(0).toUpperCase() + extra.type.slice(1)})` : '';
@@ -133,8 +184,11 @@ function renderExtraDisplayMode(extra) {
     
     let details = '';
     
-    if (extra.isSimple && extra.simpleAspect) {
-        details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspect: ${extra.simpleAspect}</div>`;
+    if (extra.isSimple && extra.simpleAspects && extra.simpleAspects.length > 0) {
+        const validAspects = extra.simpleAspects.filter(a => a.trim() !== '');
+        if (validAspects.length > 0) {
+            details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspects: ${validAspects.join(', ')}</div>`;
+        }
     } else if (!extra.isSimple && extra.features.length > 0) {
         const featureGroups = {};
         extra.features.forEach(f => {
@@ -217,13 +271,21 @@ function renderCustomOptions(extra) {
         const disabled = isRequired ? 'disabled' : '';
         const disabledClass = isRequired ? 'disabled' : '';
         
+        let costDisplay;
+        if (feature.gmCost) {
+            costDisplay = 'GM';
+        } else {
+            costDisplay = feature.cost === 0 ? 'Free' : feature.cost;
+        }
+        
         html += `
             <div class="power-item ${disabledClass}" id="${extra.id}_feature_${feature.name.replace(/\s+/g, '_')}">
                 <label>
                     <input type="checkbox" ${hasInstances ? 'checked' : ''} ${disabled} 
-                           onchange="toggleExtraFeature('${extra.id}', '${feature.name}', ${feature.cost}, '${feature.required || ''}')">
-                    <span class="power-cost">${feature.cost === 0 ? 'Free' : feature.cost}</span>
+                           onchange="toggleExtraFeature('${extra.id}', '${feature.name}', ${feature.cost}, '${feature.required || ''}', ${feature.gmCost || false})">
+                    <span class="power-cost">${costDisplay}</span>
                     ${feature.name}
+                    ${feature.gmCost ? ' (GM Approval Required)' : ''}
                 </label>
                 <div class="power-description">${feature.description}</div>
                 
@@ -355,6 +417,103 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
             `;
             break;
             
+        case 'Bound':
+            content = `
+                <div class="form-group">
+                    <label>Bound Details:</label>
+                    <input type="text" 
+                           placeholder="e.g., telepathic link, shared senses"
+                           value="${instance.description || ''}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
+                           style="width: 100%;">
+                </div>
+            `;
+            break;
+            
+        case 'Talented':
+            content = `
+                <div class="form-group">
+                    <label>Unique Skill Name:</label>
+                    <input type="text" 
+                           placeholder="e.g., Shadow Manipulation, Quantum Physics"
+                           value="${instance.skillName || ''}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'skillName', this.value)"
+                           style="width: 100%; margin-bottom: 5px;">
+                    <label>Skill Description:</label>
+                    <textarea 
+                        placeholder="Describe what this unique skill allows..."
+                        onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
+                        style="width: 100%; height: 60px; resize: vertical;"
+                    >${instance.description || ''}</textarea>
+                    <label>Points Spent:</label>
+                    <input type="number" min="1" max="20" 
+                           value="${instance.pointsSpent || 1}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'pointsSpent', parseInt(this.value))"
+                           style="width: 100px;">
+                </div>
+            `;
+            break;
+            
+        case 'Training':
+            content = `
+                <div class="form-group">
+                    <label>Skill/Power to Improve:</label>
+                    <input type="text" 
+                           placeholder="e.g., Advanced Pattern Adept, Unique Skill Name"
+                           value="${instance.skillName || ''}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'skillName', this.value)"
+                           style="width: 100%; margin-bottom: 5px;">
+                    <label>Improvement (+1 per point):</label>
+                    <input type="number" min="1" max="12" 
+                           value="${instance.improvement || 1}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'improvement', parseInt(this.value))"
+                           style="width: 100px;">
+                </div>
+            `;
+            break;
+            
+        case 'Primal Born':
+            content = `
+                <div class="form-group">
+                    <label>Ancient Heritage Details:</label>
+                    <textarea 
+                        placeholder="Describe your activated Ancient Heritage..."
+                        onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
+                        style="width: 100%; height: 60px; resize: vertical;"
+                    >${instance.description || ''}</textarea>
+                    <label>Points Spent (GM Approval):</label>
+                    <input type="number" min="1" max="20" 
+                           value="${instance.pointsSpent || 1}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'pointsSpent', parseInt(this.value))"
+                           style="width: 100px;">
+                </div>
+            `;
+            break;
+            
+        case 'Unusual':
+            content = `
+                <div class="form-group">
+                    <label>Unusual Feature Name:</label>
+                    <input type="text" 
+                           placeholder="e.g., Phase Shifting, Time Dilation"
+                           value="${instance.featureName || ''}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'featureName', this.value)"
+                           style="width: 100%; margin-bottom: 5px;">
+                    <label>Feature Description:</label>
+                    <textarea 
+                        placeholder="Describe this unusual feature..."
+                        onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
+                        style="width: 100%; height: 60px; resize: vertical;"
+                    >${instance.description || ''}</textarea>
+                    <label>Points Spent (GM Approval):</label>
+                    <input type="number" min="1" max="20" 
+                           value="${instance.pointsSpent || 1}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'pointsSpent', parseInt(this.value))"
+                           style="width: 100px;">
+                </div>
+            `;
+            break;
+            
         default:
             if (instance.description !== undefined) {
                 content = `
@@ -458,6 +617,7 @@ function addFeatureInstance(extraId, featureName) {
     const newInstance = {
         name: featureName,
         cost: feature.cost,
+        gmCost: feature.gmCost,
         instanceIndex: featureInstanceCounter++
     };
     
@@ -468,6 +628,7 @@ function addFeatureInstance(extraId, featureName) {
             break;
         case 'Exceptional':
         case 'Technique':
+        case 'Bound':
             newInstance.description = '';
             break;
         case 'Flexible':
@@ -478,6 +639,24 @@ function addFeatureInstance(extraId, featureName) {
         case 'Focus':
             newInstance.skill = '';
             newInstance.circumstance = '';
+            break;
+        case 'Talented':
+            newInstance.skillName = '';
+            newInstance.description = '';
+            newInstance.pointsSpent = 1;
+            break;
+        case 'Training':
+            newInstance.skillName = '';
+            newInstance.improvement = 1;
+            break;
+        case 'Primal Born':
+            newInstance.description = '';
+            newInstance.pointsSpent = 1;
+            break;
+        case 'Unusual':
+            newInstance.featureName = '';
+            newInstance.description = '';
+            newInstance.pointsSpent = 1;
             break;
     }
     
@@ -533,6 +712,14 @@ function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, v
     
     if (instance) {
         instance[field] = value;
+        
+        // Update cost display if this affects cost
+        if (['pointsSpent', 'improvement'].includes(field)) {
+            const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+            updatePointsDisplay();
+        }
+        
         saveCharacter();
     }
 }
@@ -540,43 +727,53 @@ function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, v
 function getAvailableFeatures(type) {
     const features = {
         ally: [
-            { name: 'Base Cost', cost: 0.5, required: '', description: 'REQUIRED FIRST. Ally starts with an Aspect, one Skill at Amber (0), another at Chaos (-1), and 2 mild stress boxes.' },
-            { name: 'Organization', cost: 1, required: 'Base Cost', description: 'Has many members. Ability to affect things at scale. Start with one face (named member).' },
-            { name: 'Aspect', cost: 0.5, required: 'Base Cost', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Resolute', cost: 0.25, required: 'Base Cost', description: 'Gives Ally +1 to psychic defense.' },
-            { name: 'Skilled', cost: 0.5, required: 'Base Cost', description: 'Additional Amber and Chaos skill plus 3 points to buy Skills, Powers, etc.' },
-            { name: 'Sturdy', cost: 0.25, required: 'Base Cost', description: 'Add one mild stress box. If bought thrice, may add moderate boxes.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            { name: 'Base Cost', cost: 0.5, required: '', description: 'REQUIRED FIRST. Ally starts with an Aspect, one Skill at Amber (0), another at Chaos (-1), and 2 mild stress boxes.', gmCost: false },
+            { name: 'Organization', cost: 1, required: 'Base Cost', description: 'Has many members. Ability to affect things at scale. Start with one face (named member).', gmCost: false },
+            { name: 'Aspect', cost: 0.5, required: 'Base Cost', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.', gmCost: false },
+            { name: 'Bound', cost: 1, required: 'Base Cost', description: 'May use Ally\'s senses, Skills, or Powers (w/ concentration)', gmCost: false },
+            { name: 'Cursed, Risky, or Uncontrolled', cost: -1, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back. This may be applied twice if needed.', gmCost: false },
+            { name: 'Resolute', cost: 0.25, required: 'Base Cost', description: 'Gives Ally +1 to psychic defense.', gmCost: false },
+            { name: 'Skilled', cost: 0.5, required: 'Base Cost', description: 'Additional Amber and Chaos skill plus 3 points to buy Skills, Powers, etc.', gmCost: false },
+            { name: 'Sturdy', cost: 0.25, required: 'Base Cost', description: 'Add one mild stress box. If bought thrice, may add moderate boxes.', gmCost: false },
+            { name: 'Unusual', cost: 0, required: 'Base Cost', description: 'Add a Feature not covered above.', gmCost: true }
         ],
         domain: [
-            { name: 'Aspect', cost: 0.25, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Barrier', cost: 0.25, required: '', description: 'Each time purchased blocks one Power from Domain.' },
-            { name: 'Control', cost: 0.25, required: '', description: 'Each time purchased gives +1 to control Domain.' },
-            { name: 'Exceptional', cost: 0.5, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
-            { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
-            { name: 'Focus', cost: 0.5, required: '', description: '+2 to a Skill when [describe circumstance].' },
-            { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Domain.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            { name: 'Aspect', cost: 0.25, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.', gmCost: false },
+            { name: 'Barrier', cost: 0.25, required: '', description: 'Each time purchased blocks one Power from Domain.', gmCost: false },
+            { name: 'Control', cost: 0.25, required: '', description: 'Each time purchased gives +1 to control Domain.', gmCost: false },
+            { name: 'Cursed, Risky, or Uncontrolled', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back. This may be applied twice if needed.', gmCost: false },
+            { name: 'Exceptional', cost: 0.5, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.', gmCost: false },
+            { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].', gmCost: false },
+            { name: 'Focus', cost: 0.5, required: '', description: '+2 to a Skill when [describe circumstance].', gmCost: false },
+            { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Domain.', gmCost: false },
+            { name: 'Unusual', cost: 0, required: '', description: 'Add a Feature not covered above.', gmCost: true }
         ],
         item: [
-            { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
-            { name: 'Flexible', cost: 1, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
-            { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
-            { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
-            { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.', gmCost: false },
+            { name: 'Cursed, Risky, or Uncontrolled', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back. This may be applied twice if needed.', gmCost: false },
+            { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.', gmCost: false },
+            { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].', gmCost: false },
+            { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].', gmCost: false },
+            { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.', gmCost: false },
+            { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.', gmCost: false },
+            { name: 'Unusual', cost: 0, required: '', description: 'Add a Feature not covered above.', gmCost: true }
         ],
         mastery: [
-            { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Dominant', cost: 4, required: '', description: 'Choose one Skill to increase scale from Superior to Paragon. Only one Skill allowed.' },
-            { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
-            { name: 'Flexible', cost: 1, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
-            { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
-            { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
-            { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
-            { name: 'Technique', cost: 0.5, required: '', description: 'Add one ability from a Power. If full Power acquired later, this refunds back.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.', gmCost: false },
+            { name: 'Cursed, Risky, or Uncontrolled', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back. This may be applied twice if needed.', gmCost: false },
+            { name: 'Dominant', cost: 4, required: '', description: 'Choose one Skill to increase scale from Superior to Paragon. Only one Skill allowed.', gmCost: false },
+            { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.', gmCost: false },
+            { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].', gmCost: false },
+            { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].', gmCost: false },
+            { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.', gmCost: false },
+            { name: 'Immortal', cost: 1, required: '', description: 'Will recover from most any damage over time.', gmCost: false },
+            { name: 'Incandescent', cost: 1, required: '', description: 'Lose all Power initiations, immune to Unmaking.', gmCost: false },
+            { name: 'Primal Born', cost: 0, required: 'Incandescent,Immortal', description: 'Requires Incandescent and Immortal, you have integrated and activated Ancient Heritage.', gmCost: true },
+            { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.', gmCost: false },
+            { name: 'Talented', cost: 0, required: '', description: 'Design a unique skill with custom abilities.', gmCost: true },
+            { name: 'Technique', cost: 0.5, required: '', description: 'Add one ability from a Power. If full Power acquired later, this refunds back.', gmCost: false },
+            { name: 'Training', cost: 1, required: '', description: 'Improve Advanced Power or Unique Skill (1 point per +1 to Skill).', gmCost: false },
+            { name: 'Unusual', cost: 0, required: '', description: 'Add a Feature not covered above.', gmCost: true }
         ]
     };
     
@@ -605,10 +802,15 @@ function updateExtraType(extraId) {
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
-    // Update simple invokes display
-    const simpleDiv = document.getElementById(extraId + '_simple_options');
-    const heritageInfo = simpleDiv.querySelector('.heritage-info');
-    heritageInfo.innerHTML = `<strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.`;
+    // Update simple options
+    if (extra.isSimple) {
+        const simpleDiv = document.getElementById(extraId + '_simple_options');
+        simpleDiv.innerHTML = renderSimpleAspects(extra) + `
+            <div class="heritage-info">
+                <strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.
+            </div>
+        `;
+    }
     
     updatePointsDisplay();
     saveCharacter();
@@ -625,14 +827,7 @@ function updateExtraMode(extraId, isSimple) {
     saveCharacter();
 }
 
-function updateExtraAspect(extraId) {
-    const extra = character.extras.find(e => e.id === extraId);
-    const aspectInput = document.getElementById(extraId + '_aspect');
-    extra.simpleAspect = aspectInput.value;
-    saveCharacter();
-}
-
-function toggleExtraFeature(extraId, featureName, cost, required) {
+function toggleExtraFeature(extraId, featureName, cost, required, gmCost) {
     const extra = character.extras.find(e => e.id === extraId);
     const instances = extra.features.filter(f => f.name === featureName);
     
@@ -640,10 +835,24 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
         // Remove all instances of this feature
         extra.features = extra.features.filter(f => f.name !== featureName);
     } else {
+        // Check prerequisites for Primal Born
+        if (featureName === 'Primal Born') {
+            const hasIncandescent = extra.features.some(f => f.name === 'Incandescent');
+            const hasImmortal = extra.features.some(f => f.name === 'Immortal');
+            if (!hasIncandescent || !hasImmortal) {
+                alert('Primal Born requires both Incandescent and Immortal features.');
+                // Uncheck the checkbox
+                const checkbox = document.querySelector(`#${extraId}_feature_${featureName.replace(/\s+/g, '_')} input[type="checkbox"]`);
+                if (checkbox) checkbox.checked = false;
+                return;
+            }
+        }
+        
         // Add first instance of this feature
         const newInstance = {
             name: featureName,
             cost: cost,
+            gmCost: gmCost,
             instanceIndex: featureInstanceCounter++
         };
         
@@ -654,6 +863,7 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
                 break;
             case 'Exceptional':
             case 'Technique':
+            case 'Bound':
                 newInstance.description = '';
                 break;
             case 'Flexible':
@@ -664,6 +874,24 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
             case 'Focus':
                 newInstance.skill = '';
                 newInstance.circumstance = '';
+                break;
+            case 'Talented':
+                newInstance.skillName = '';
+                newInstance.description = '';
+                newInstance.pointsSpent = 1;
+                break;
+            case 'Training':
+                newInstance.skillName = '';
+                newInstance.improvement = 1;
+                break;
+            case 'Primal Born':
+                newInstance.description = '';
+                newInstance.pointsSpent = 1;
+                break;
+            case 'Unusual':
+                newInstance.featureName = '';
+                newInstance.description = '';
+                newInstance.pointsSpent = 1;
                 break;
         }
         
@@ -686,11 +914,29 @@ function calculateExtraCost(extra) {
     if (!extra.type) return 0;
     
     if (extra.isSimple) {
-        // Simple extras: just 1 point for basic functionality
-        return 1;
+        // Simple extras: 1 point base + aspect costs
+        let cost = 1;
+        if (extra.simpleAspects && extra.simpleAspects.length > 0) {
+            const validAspects = extra.simpleAspects.filter(a => a.trim() !== '');
+            cost += validAspects.length * getAspectCost(extra.type);
+        }
+        return cost;
     } else {
         // Custom extras: sum of all features
-        return extra.features.reduce((total, feature) => total + feature.cost, 0);
+        return extra.features.reduce((total, feature) => {
+            let featureCost = feature.cost;
+            
+            // Handle variable costs
+            if (feature.gmCost && ['Talented', 'Training', 'Primal Born', 'Unusual'].includes(feature.name)) {
+                if (feature.name === 'Training') {
+                    featureCost = feature.improvement || 1;
+                } else {
+                    featureCost = feature.pointsSpent || 1;
+                }
+            }
+            
+            return total + featureCost;
+        }, 0);
     }
 }
 
@@ -875,7 +1121,7 @@ function calculateUsedPoints() {
     // Calculate power costs with heritage discounts and credits
     character.powers.forEach(power => {
         // Skip Ancient powers (GM determined cost)
-        if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
+        if (['dominion', 'essence', 'song'].includes(power.id)) {
             return;
         }
         
@@ -953,7 +1199,7 @@ function updateCharacterSummary() {
         let hasAncientPowers = false;
         character.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
+            if (['dominion', 'essence', 'song'].includes(power.id)) {
                 summary += `<p><strong>${powerName}</strong> (GM approval required)</p>`;
                 hasAncientPowers = true;
             } else {
@@ -993,8 +1239,11 @@ function updateCharacterSummary() {
             
             summary += `<p><strong>${extraName}${extraType}</strong>${costText}</p>`;
             
-            if (extra.isSimple && extra.simpleAspect) {
-                summary += `<p style="margin-left: 20px; font-style: italic;">Aspect: ${extra.simpleAspect}</p>`;
+            if (extra.isSimple && extra.simpleAspects && extra.simpleAspects.length > 0) {
+                const validAspects = extra.simpleAspects.filter(a => a.trim() !== '');
+                if (validAspects.length > 0) {
+                    summary += `<p style="margin-left: 20px; font-style: italic;">Aspects: ${validAspects.join(', ')}</p>`;
+                }
             } else if (!extra.isSimple && extra.features.length > 0) {
                 const featureGroups = {};
                 extra.features.forEach(f => {
@@ -1127,6 +1376,15 @@ function loadCharacter() {
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
+            // Migrate old simpleAspect to simpleAspects array
+            character.extras.forEach(extra => {
+                if (extra.simpleAspect && !extra.simpleAspects) {
+                    extra.simpleAspects = extra.simpleAspect ? [extra.simpleAspect] : [];
+                    delete extra.simpleAspect;
+                }
+                if (!extra.simpleAspects) extra.simpleAspects = [];
+            });
+            
             // Clear existing extras display
             document.getElementById('extrasContainer').innerHTML = '';
             
@@ -1181,7 +1439,7 @@ function exportCharacter() {
         output += '\n=== POWERS ===\n';
         exportData.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
+            if (['dominion', 'essence', 'song'].includes(power.id)) {
                 output += `${powerName} (GM approval required)\n`;
             } else {
                 let displayCost = power.cost;
@@ -1214,8 +1472,11 @@ function exportCharacter() {
             
             output += `${extraName}${extraType}${costText}\n`;
             
-            if (extra.isSimple && extra.simpleAspect) {
-                output += `  Aspect: ${extra.simpleAspect}\n`;
+            if (extra.isSimple && extra.simpleAspects && extra.simpleAspects.length > 0) {
+                const validAspects = extra.simpleAspects.filter(a => a.trim() !== '');
+                if (validAspects.length > 0) {
+                    output += `  Aspects: ${validAspects.join(', ')}\n`;
+                }
             } else if (!extra.isSimple && extra.features.length > 0) {
                 const featureGroups = {};
                 extra.features.forEach(f => {
