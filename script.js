@@ -416,6 +416,7 @@ function addSkillModification(extraId, featureName, instanceIndex) {
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
+    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -432,6 +433,7 @@ function removeSkillModification(extraId, featureName, instanceIndex, skillIndex
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
+    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -447,6 +449,7 @@ function updateSkillModification(extraId, featureName, instanceIndex, skillIndex
     
     instance.skillMods[skillIndex][field] = field === 'value' ? parseInt(value) : value;
     
+    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -532,6 +535,7 @@ function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, v
     
     if (instance) {
         instance[field] = value;
+        updatePointsDisplay();
         saveCharacter();
     }
 }
