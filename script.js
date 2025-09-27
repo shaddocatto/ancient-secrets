@@ -40,7 +40,7 @@ function addExtra() {
     character.extras.push(extra);
     renderExtra(extra);
     updatePointsDisplay();
-    saveCharacter(); // Ensure new extras are saved
+    saveCharacter(); // Save the new extra to localStorage
 }
 
 function removeExtra(extraId) {
@@ -185,14 +185,12 @@ function editExtra(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     extra.isEditing = true;
     renderExtra(extra);
-    saveCharacter(); // Save when switching to edit mode
 }
 
 function saveExtra(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     extra.isEditing = false;
     renderExtra(extra);
-    updatePointsDisplay(); // Update points when saving
     saveCharacter();
 }
 
@@ -344,29 +342,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
             `;
             break;
             
-        case 'Training':
-            content = `
-                <div class="form-group">
-                    <label>Training in <select onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'skill', this.value)" style="display: inline; width: auto; margin: 0 5px;">
-                        <option value="">skill</option>
-                        <option value="strength" ${instance.skill === 'strength' ? 'selected' : ''}>Strength</option>
-                        <option value="warfare" ${instance.skill === 'warfare' ? 'selected' : ''}>Warfare</option>
-                        <option value="psyche" ${instance.skill === 'psyche' ? 'selected' : ''}>Psyche</option>
-                        <option value="endurance" ${instance.skill === 'endurance' ? 'selected' : ''}>Endurance</option>
-                        <option value="status" ${instance.skill === 'status' ? 'selected' : ''}>Status</option>
-                        <option value="intrigue" ${instance.skill === 'intrigue' ? 'selected' : ''}>Intrigue</option>
-                        <option value="hunting" ${instance.skill === 'hunting' ? 'selected' : ''}>Hunting</option>
-                        <option value="lore" ${instance.skill === 'lore' ? 'selected' : ''}>Lore</option>
-                    </select></label>
-                    <input type="text" 
-                           placeholder="Describe the training or specialization"
-                           value="${instance.description || ''}"
-                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
-                           style="width: 100%; margin-top: 5px;">
-                </div>
-            `;
-            break;
-            
         case 'Technique':
             content = `
                 <div class="form-group">
@@ -442,7 +417,6 @@ function addSkillModification(extraId, featureName, instanceIndex) {
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
-    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -459,7 +433,6 @@ function removeSkillModification(extraId, featureName, instanceIndex, skillIndex
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
-    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -475,7 +448,6 @@ function updateSkillModification(extraId, featureName, instanceIndex, skillIndex
     
     instance.skillMods[skillIndex][field] = field === 'value' ? parseInt(value) : value;
     
-    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -504,9 +476,8 @@ function addFeatureInstance(extraId, featureName) {
             newInstance.circumstance = '';
             break;
         case 'Focus':
-        case 'Training':
             newInstance.skill = '';
-            newInstance.description = '';
+            newInstance.circumstance = '';
             break;
     }
     
@@ -562,7 +533,6 @@ function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, v
     
     if (instance) {
         instance[field] = value;
-        updatePointsDisplay();
         saveCharacter();
     }
 }
@@ -573,11 +543,10 @@ function getAvailableFeatures(type) {
             { name: 'Base Cost', cost: 0.5, required: '', description: 'REQUIRED FIRST. Ally starts with an Aspect, one Skill at Amber (0), another at Chaos (-1), and 2 mild stress boxes.' },
             { name: 'Organization', cost: 1, required: 'Base Cost', description: 'Has many members. Ability to affect things at scale. Start with one face (named member).' },
             { name: 'Aspect', cost: 0.5, required: 'Base Cost', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Bound', cost: 1, required: 'Base Cost', description: 'May use Ally\'s senses, Skills, or Powers (w/ concentration).' },
             { name: 'Resolute', cost: 0.25, required: 'Base Cost', description: 'Gives Ally +1 to psychic defense.' },
             { name: 'Skilled', cost: 0.5, required: 'Base Cost', description: 'Additional Amber and Chaos skill plus 3 points to buy Skills, Powers, etc.' },
             { name: 'Sturdy', cost: 0.25, required: 'Base Cost', description: 'Add one mild stress box. If bought thrice, may add moderate boxes.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -1, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
+            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
         ],
         domain: [
             { name: 'Aspect', cost: 0.25, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
@@ -587,7 +556,7 @@ function getAvailableFeatures(type) {
             { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
             { name: 'Focus', cost: 0.5, required: '', description: '+2 to a Skill when [describe circumstance].' },
             { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Domain.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -1, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
+            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
         ],
         item: [
             { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
@@ -596,23 +565,18 @@ function getAvailableFeatures(type) {
             { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
             { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
             { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -1, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
+            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
         ],
         mastery: [
             { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Dominant', cost: 4, required: '', description: 'Choose one Skill to increase scale from Superior to Legendary. Only one Skill allowed.' },
+            { name: 'Dominant', cost: 4, required: '', description: 'Choose one Skill to increase scale from Superior to Paragon. Only one Skill allowed.' },
             { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
             { name: 'Flexible', cost: 1, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
             { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
             { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
-            { name: 'Immortal', cost: 1, required: '', description: 'Will recover from most any damage over time.' },
-            { name: 'Incandescent', cost: 1, required: '', description: 'Lose all Power initiations, immune to Unmaking.' },
-            { name: 'Primal Born', cost: 0, required: '', description: 'Requires Incandescent and Immortal, activated Ancient Heritage, see GM for cost and effects.' },
             { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
-            { name: 'Talented', cost: 0, required: '', description: 'Design a unique skill with custom abilities, see GM for cost.' },
             { name: 'Technique', cost: 0.5, required: '', description: 'Add one ability from a Power. If full Power acquired later, this refunds back.' },
-            { name: 'Training', cost: 1, required: '', description: 'Costs 1 point per +1 to the Skill, see GM.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -1, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
+            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
         ]
     };
     
@@ -665,7 +629,6 @@ function updateExtraAspect(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     const aspectInput = document.getElementById(extraId + '_aspect');
     extra.simpleAspect = aspectInput.value;
-    updatePointsDisplay(); // Make sure points are updated
     saveCharacter();
 }
 
@@ -699,9 +662,8 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
                 newInstance.circumstance = '';
                 break;
             case 'Focus':
-            case 'Training':
                 newInstance.skill = '';
-                newInstance.description = '';
+                newInstance.circumstance = '';
                 break;
         }
         
@@ -740,6 +702,7 @@ function updateHeritage() {
     character.heritage = heritage;
     
     let heritageDescription = '';
+    let heritagePoints = 0;
     
     // Reset heritage-specific power states
     document.getElementById('pattern-adept').disabled = false;
@@ -748,21 +711,25 @@ function updateHeritage() {
     switch(heritage) {
         case 'recognized-amber':
             heritageDescription = 'Free Pattern Adept power. Gains Court position, Blood Curse, and Slow Regeneration.';
+            heritagePoints = 0;
             // Auto-enable Pattern Adept
             document.getElementById('pattern-adept').checked = true;
             document.getElementById('pattern-adept').disabled = true;
             break;
         case 'unrecognized-amber':
             heritageDescription = 'Gain 5 points. Has Blood Curse and Slow Regeneration. Work with GM for details.';
+            heritagePoints = 5;
             break;
         case 'chaos':
             heritageDescription = 'Gain 2 points. Free Shapeshifting power.';
+            heritagePoints = 2;
             // Auto-enable Shapeshifting
             document.getElementById('shapeshifting').checked = true;
             document.getElementById('shapeshifting').disabled = true;
             break;
         case 'both':
             heritageDescription = 'Costs 3 points. Recognized status, Court position, Blood Curse, Slow Regeneration, Pattern, and Shapeshifting.';
+            heritagePoints = -3;
             // Auto-enable both Pattern and Shapeshifting
             document.getElementById('pattern-adept').checked = true;
             document.getElementById('pattern-adept').disabled = true;
@@ -771,9 +738,11 @@ function updateHeritage() {
             break;
         case 'other':
             heritageDescription = 'Gain 6 points. Work with GM to create custom heritage.';
+            heritagePoints = 6;
             break;
         default:
             heritageDescription = '';
+            heritagePoints = 0;
             break;
     }
     
@@ -784,7 +753,7 @@ function updateHeritage() {
         heritageInfo.style.display = 'none';
     }
     
-    character.totalPoints = 60; // Keep total at 60, treat heritage as spending
+    character.totalPoints = 60 + heritagePoints;
     updatePointsDisplay();
     updatePowers();
     saveCharacter();
@@ -898,27 +867,6 @@ function isHeritageFreePower(powerId) {
 function calculateUsedPoints() {
     let total = 0;
     
-    // Calculate heritage costs
-    const heritage = character.heritage;
-    switch(heritage) {
-        case 'unrecognized-amber':
-            total -= 5; // Gain 5 points (negative cost)
-            break;
-        case 'chaos':
-            total -= 2; // Gain 2 points (negative cost)
-            break;
-        case 'both':
-            total += 3; // Costs 3 points
-            break;
-        case 'other':
-            total -= 6; // Gain 6 points (negative cost)
-            break;
-        case 'recognized-amber':
-        default:
-            // No point cost
-            break;
-    }
-    
     // Calculate skill costs
     Object.values(character.skills).forEach(value => {
         total += Math.max(0, value);
@@ -927,7 +875,7 @@ function calculateUsedPoints() {
     // Calculate power costs with heritage discounts and credits
     character.powers.forEach(power => {
         // Skip Ancient powers (GM determined cost)
-        if (['dominion', 'essence', 'song'].includes(power.id)) {
+        if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
             return;
         }
         
@@ -1005,7 +953,7 @@ function updateCharacterSummary() {
         let hasAncientPowers = false;
         character.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            if (['dominion', 'essence', 'song'].includes(power.id)) {
+            if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
                 summary += `<p><strong>${powerName}</strong> (GM approval required)</p>`;
                 hasAncientPowers = true;
             } else {
@@ -1073,69 +1021,6 @@ function updateCharacterSummary() {
     
     summary += `<h4>Point Allocation</h4>`;
     summary += `<p><strong>Total Available:</strong> ${character.totalPoints}</p>`;
-    
-    // Break down spending
-    let skillsCost = 0;
-    Object.values(character.skills).forEach(value => {
-        skillsCost += Math.max(0, value);
-    });
-    
-    let powersCost = 0;
-    character.powers.forEach(power => {
-        if (['dominion', 'essence', 'song'].includes(power.id)) {
-            return; // Skip ancient powers
-        }
-        let powerCost = power.cost;
-        if (isHeritageFreePower(power.id)) {
-            powerCost = 0;
-        } else if (power.credit) {
-            const credits = power.credit.split(',');
-            credits.forEach(credit => {
-                const [powerName, creditValue] = credit.split(':');
-                const hasPowerForCredit = character.powers.some(p => p.id === powerName);
-                if (hasPowerForCredit) {
-                    powerCost += parseInt(creditValue);
-                }
-            });
-        }
-        powersCost += Math.max(0, powerCost);
-    });
-    
-    let extrasCost = 0;
-    character.extras.forEach(extra => {
-        extrasCost += calculateExtraCost(extra);
-    });
-    
-    let heritageCost = 0;
-    const heritage = character.heritage;
-    switch(heritage) {
-        case 'unrecognized-amber':
-            heritageCost = -5;
-            break;
-        case 'chaos':
-            heritageCost = -2;
-            break;
-        case 'both':
-            heritageCost = 3;
-            break;
-        case 'other':
-            heritageCost = -6;
-            break;
-    }
-    
-    if (heritageCost !== 0) {
-        summary += `<p><strong>Heritage:</strong> ${heritageCost >= 0 ? heritageCost : `+${Math.abs(heritageCost)}`} pts</p>`;
-    }
-    if (skillsCost > 0) {
-        summary += `<p><strong>Skills:</strong> ${skillsCost} pts</p>`;
-    }
-    if (powersCost > 0) {
-        summary += `<p><strong>Powers:</strong> ${powersCost} pts</p>`;
-    }
-    if (extrasCost > 0) {
-        summary += `<p><strong>Extras:</strong> ${extrasCost} pts</p>`;
-    }
-    
     summary += `<p><strong>Used:</strong> ${character.usedPoints}</p>`;
     summary += `<p><strong>Good Stuff Rating:</strong> ${character.totalPoints - character.usedPoints}</p>`;
     
@@ -1145,9 +1030,6 @@ function updateCharacterSummary() {
 // Save/Load functionality
 function saveCharacter() {
     try {
-        // Ensure character.extras is up to date with current extras state
-        updateCharacterExtrasFromDOM();
-        
         // Save form values
         const saveData = {
             ...character,
@@ -1164,9 +1046,6 @@ function saveCharacter() {
             extraIdCounter: extraIdCounter,
             featureInstanceCounter: featureInstanceCounter
         };
-
-        // Explicitly ensure extras are in the save data
-        saveData.extras = [...character.extras]; // Make a copy to avoid reference issues
 
         // Save skill values
         const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
@@ -1191,19 +1070,19 @@ function saveCharacter() {
     }
 }
 
-// Helper function to ensure extras are current
-function updateCharacterExtrasFromDOM() {
-    // This function ensures that character.extras reflects the current state
-    // The extras are already being updated in real-time through the various extra functions
-    // so this is just a safety check
-}
-
 function loadCharacter() {
     try {
         const saved = localStorage.getItem('amberCharacter');
         if (!saved) return;
 
         const saveData = JSON.parse(saved);
+        
+        // Restore character object properties
+        if (saveData.heritage) character.heritage = saveData.heritage;
+        if (saveData.totalPoints) character.totalPoints = saveData.totalPoints;
+        if (saveData.usedPoints !== undefined) character.usedPoints = saveData.usedPoints;
+        if (saveData.skills) character.skills = saveData.skills;
+        if (saveData.powers) character.powers = saveData.powers;
         
         // Restore form values
         if (saveData.concept) document.getElementById('concept').value = saveData.concept;
@@ -1215,6 +1094,9 @@ function loadCharacter() {
         // Restore heritage
         if (saveData.formValues && saveData.formValues.heritage) {
             document.getElementById('heritage').value = saveData.formValues.heritage;
+            updateHeritage();
+        } else if (saveData.heritage) {
+            document.getElementById('heritage').value = saveData.heritage;
             updateHeritage();
         }
 
@@ -1239,9 +1121,9 @@ function loadCharacter() {
             updatePowers();
         }
 
-        // Restore extras - this is the critical part
-        if (saveData.extras && Array.isArray(saveData.extras)) {
-            character.extras = [...saveData.extras]; // Make a copy to avoid reference issues
+        // Restore extras
+        if (saveData.extras) {
+            character.extras = saveData.extras;
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
@@ -1252,9 +1134,6 @@ function loadCharacter() {
             character.extras.forEach(extra => {
                 renderExtra(extra);
             });
-        } else {
-            // No extras found, initialize empty array
-            character.extras = [];
         }
 
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
@@ -1263,7 +1142,6 @@ function loadCharacter() {
         }, 3000);
     } catch (error) {
         console.error('Load failed:', error);
-        document.getElementById('saveStatus').textContent = 'Load failed!';
     }
 }
 
@@ -1303,7 +1181,7 @@ function exportCharacter() {
         output += '\n=== POWERS ===\n';
         exportData.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            if (['dominion', 'essence', 'song'].includes(power.id)) {
+            if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
                 output += `${powerName} (GM approval required)\n`;
             } else {
                 let displayCost = power.cost;
@@ -1397,29 +1275,7 @@ function exportCharacter() {
     }
     
     output += `\n=== POINT SUMMARY ===\n`;
-    
-    // Calculate heritage cost
-    let heritageCost = 0;
-    const heritage = exportData.heritage;
-    switch(heritage) {
-        case 'unrecognized-amber':
-            heritageCost = -5;
-            break;
-        case 'chaos':
-            heritageCost = -2;
-            break;
-        case 'both':
-            heritageCost = 3;
-            break;
-        case 'other':
-            heritageCost = -6;
-            break;
-    }
-    
     output += `Total Available: ${exportData.totalPoints}\n`;
-    if (heritageCost !== 0) {
-        output += `Heritage: ${heritageCost >= 0 ? heritageCost : `+${Math.abs(heritageCost)}`} pts\n`;
-    }
     output += `Used: ${exportData.usedPoints}\n`;
     output += `Good Stuff Rating: ${exportData.totalPoints - exportData.usedPoints}\n`;
     
