@@ -192,6 +192,21 @@ select option {
     gap: 10px;
 }
 
+.power-item .form-row {
+    margin: 10px 0 5px 0;
+    flex-wrap: wrap;
+}
+
+.power-item .form-row input[type="number"] {
+    padding: 5px 8px;
+    font-size: 0.9em;
+}
+
+.power-item .form-row .skill-cost {
+    font-size: 0.75em;
+    margin-left: 10px;
+}
+
 .power-cost {
     background: #EFBF04;
     color: #1a0033;
@@ -298,7 +313,7 @@ select option {
 
 .feature-instance-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: between;
     align-items: center;
     margin-bottom: 10px;
 }

@@ -119,7 +119,7 @@
         <!-- Powers -->
         <div class="section">
             <h2>Powers</h2>
-            <p style="margin-bottom: 20px; color: #cccccc;">All Powers require appropriate Heritage and/or Permission Aspect to access.</p>
+            <p style="margin-bottom: 20px; color: #cccccc;">All Powers require appropriate Heritage and/or Permission Aspect to access. You can also add additional points to powers to increase their effectiveness.</p>
             <div class="powers-grid">
                 <!-- Powers of Order -->
                 <div class="power-category">
@@ -131,6 +131,11 @@
                             Pattern Adept
                         </label>
                         <div class="power-description">Requires: Amber Heritage; Amber (0) Endurance. Shadow Travel, Hellride, Shadow of Desire, Resources, Manipulate Probability, Pattern Psychic Defense</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="pattern-adept-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="pattern-adept-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="pattern-adept-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -139,6 +144,11 @@
                             Advanced Pattern Adept
                         </label>
                         <div class="power-description">Requires: Pattern Adept; Amber (0) Psyche. Pattern Lens, Mold Shadow, Walk the Pattern of the mind, Edit Pattern</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="advanced-pattern-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="advanced-pattern-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="advanced-pattern-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -147,6 +157,11 @@
                             Warden of the Grand Stair
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche. Open and Close Doors, Wayfinding, Piercing Veil, Exegesis</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="warden-stair-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="warden-stair-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="warden-stair-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -155,6 +170,11 @@
                             Master of the Grand Stair
                         </label>
                         <div class="power-description">Requires: Warden; Amber (0) Psyche, Chaos (-1) Endurance. Ward Doors, Control Doors, Making Keys, Advanced abilities</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="master-stair-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="master-stair-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="master-stair-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -163,6 +183,11 @@
                             Eidolon Mastery
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche. Immortality, Edit reality, Guide reality, Sanctification</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="eidolon-mastery-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="eidolon-mastery-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="eidolon-mastery-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -176,6 +201,11 @@
                             Shapeshifting
                         </label>
                         <div class="power-description">Requires: Chaos Heritage; Chaos (-1) Strength and Endurance. Assume Known Shape, Automatic Shifting, Demon Form, Healing, Primal Form</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="shapeshifting-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="shapeshifting-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="shapeshifting-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -184,6 +214,11 @@
                             Advanced Shapeshifting
                         </label>
                         <div class="power-description">Requires: Shapeshifting; Amber (0) Strength, Endurance, Psyche. Duplicate Other, Shape Aura, Shape Other</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="advanced-shapeshifting-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="advanced-shapeshifting-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="advanced-shapeshifting-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -192,6 +227,11 @@
                             Logrus Master
                         </label>
                         <div class="power-description">Requires: Shapeshifting; Chaos Heritage; Amber (0) Psyche, Chaos (-1) Endurance. Logrus Tendrils, Hang Spells, Find in Shadow</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="logrus-master-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="logrus-master-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="logrus-master-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -200,6 +240,11 @@
                             Advanced Logrus Master
                         </label>
                         <div class="power-description">Requires: Logrus Master; Amber (0) Psyche and Endurance. Alter Shadow, Create Primal Chaos, Logrus Healing</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="advanced-logrus-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="advanced-logrus-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="advanced-logrus-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -208,6 +253,11 @@
                             Umbra Mastery
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche. Perceiving Umbra, Control Reality, Evolution, Immortality, Regeneration, Identify Door, Force Door Open</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="umbra-mastery-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="umbra-mastery-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="umbra-mastery-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -221,6 +271,11 @@
                             Trump Artist
                         </label>
                         <div class="power-description">Requires: Chaos (-1) Psyche. Create Trump, Identify Trump, Imbue Trump Artifacts, Sense Trump, Trump Defense, Trump Sketch</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="trump-artist-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="trump-artist-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="trump-artist-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -229,6 +284,11 @@
                             Advanced Trump Artist
                         </label>
                         <div class="power-description">Requires: Trump Artist; Amber (0) Psyche. Trump Duplication, Trump Gate, Trump Jamming, Trump Memory, Trump Trap</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="advanced-trump-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="advanced-trump-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="advanced-trump-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -237,6 +297,11 @@
                             Wrighting
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche. Create Icon, Impromptu or Temporary Icon, Defense, Identify Icon, Creating Icon-Powered Artifacts</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="wrighting-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="wrighting-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="wrighting-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -250,6 +315,11 @@
                             Abyssal Lord
                         </label>
                         <div class="power-description">Requires: Initiation into the Abyss; Amber (0) Psyche, Chaos (-1) Endurance. Summon/Control Souls/Dead, Abyssal Power, Teleportation</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="abyssal-lord-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="abyssal-lord-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="abyssal-lord-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -258,6 +328,11 @@
                             Abyssal Sovereign
                         </label>
                         <div class="power-description">Requires: Abyssal Lord; Amber (0) Psyche and Endurance. Create Abyssal Constructs, Imbue with Abyssal Power, Soul Jar</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="abyssal-sovereign-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="abyssal-sovereign-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="abyssal-sovereign-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -271,6 +346,11 @@
                             Undershadow Manipulator
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche, Chaos (-1) Status. Open Portal, Summon/Bind Undershadow Creatures</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="undershadow-manipulator-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="undershadow-manipulator-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="undershadow-manipulator-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -279,6 +359,11 @@
                             Advanced Undershadow Manipulator
                         </label>
                         <div class="power-description">Requires: Undershadow Manipulator; Amber (0) Psyche and Status. Manipulate Undershadow, Imbue Undershadow, Scry Undershadow</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="advanced-undershadow-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="advanced-undershadow-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="advanced-undershadow-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -287,6 +372,11 @@
                             Keeper of the Void
                         </label>
                         <div class="power-description">Requires: Initiation into the Void; Amber (0) Psyche, Chaos (-1) Endurance. Find rift into Void, Survive Void, Communicate with creatures of the deep, Command Undershadow and Void creatures</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="keeper-void-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="keeper-void-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="keeper-void-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -300,6 +390,11 @@
                             Thraell of The Green
                         </label>
                         <div class="power-description">Requires: Initiation into the Green; Chaos (-1) Strength and Endurance. Communicate with nature, manifest the Green</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="thraell-green-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="thraell-green-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="thraell-green-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -308,6 +403,11 @@
                             Ally of The Tree
                         </label>
                         <div class="power-description">Requires: Mutual agreement; Amber (0) Strength and Endurance. Commune with Green, Travel within Green, Sustain Green</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="ally-tree-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="ally-tree-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="ally-tree-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -321,6 +421,11 @@
                             Vampiric Affliction
                         </label>
                         <div class="power-description">Requires: Vampire Heritage; Chaos (-1) Endurance. Enhance using blood, entrance weaker wills, shapeshift, damaged by sunlight</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="vampiric-affliction-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="vampiric-affliction-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="vampiric-affliction-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -329,6 +434,11 @@
                             Advanced Vampiric Affliction
                         </label>
                         <div class="power-description">Requires: Vampiric Affliction; Amber (0) Endurance, Chaos (-1) Strength and Status. Control lesser vampires, invoke Hunger, blood sorcery</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="advanced-vampiric-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="advanced-vampiric-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="advanced-vampiric-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -342,6 +452,11 @@
                             Fae Enchanter
                         </label>
                         <div class="power-description">Requires: Faerie Heritage; Chaos (-1) Status and Intrigue. Local Glamour, Binding Promises, Minor Blessings/Curses</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="fae-enchanter-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="fae-enchanter-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="fae-enchanter-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -350,6 +465,11 @@
                             Advanced Fae Enchanter
                         </label>
                         <div class="power-description">Requires: Faerie Heritage; Amber (0) Status and Intrigue, Chaos (-1) Lore. Widespread Glamour, Major Blessings/Curses</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="advanced-fae-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="advanced-fae-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="advanced-fae-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -363,6 +483,11 @@
                             Sorcery and Conjuration
                         </label>
                         <div class="power-description">Requires: Chaos (-1) Lore and power source. Develop Spell, Cast Spell, Conjure Shadow, Empowerment, Imbue, Create</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="sorcery-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="sorcery-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="sorcery-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -371,6 +496,11 @@
                             Invocation
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche and Lore. True Name powers (Divine, Call, Summon, Banish, Compel, Bind), Purification</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="invocation-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="invocation-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="invocation-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -379,6 +509,11 @@
                             The Runes
                         </label>
                         <div class="power-description">Requires: Ranked (+1) Lore. Enhance/diminish powers, create/break connections, alter local reality</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="runes-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="runes-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="runes-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -387,6 +522,11 @@
                             Mirror Enchantment
                         </label>
                         <div class="power-description">Requires: Shroudling/Vampire Heritage; Chaos (-1) Psyche and Lore. Enchanted mirrors, travel mirror-lands, call forth reflections</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="mirror-enchantment-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="mirror-enchantment-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="mirror-enchantment-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
 
@@ -401,6 +541,11 @@
                             Dominion
                         </label>
                         <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Status. Establish Domain, Empower Domain, Control Domain</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="dominion-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="dominion-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="dominion-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -409,6 +554,11 @@
                             Essence
                         </label>
                         <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Endurance. True Form (Invoke, Reveal, Empower), Banner Control</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="essence-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="essence-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="essence-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -417,6 +567,11 @@
                             The Song
                         </label>
                         <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Hear the Song, Join the Song, Guide the Song, Add to the Song</div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <label for="song-points" style="min-width: 80px;">Points:</label>
+                            <input type="number" id="song-points" min="0" max="12" value="0" onchange="updatePowerPoints()" style="width: 80px;">
+                            <span class="skill-cost" id="song-pointsCost">Cost: 0 points</span>
+                        </div>
                     </div>
                 </div>
             </div>

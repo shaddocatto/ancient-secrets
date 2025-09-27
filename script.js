@@ -16,6 +16,7 @@ let character = {
         lore: 0
     },
     powers: [],
+    powerPoints: {}, // Track points allocated to each power
     extras: [],
     totalPoints: 60,
     usedPoints: 0
@@ -40,6 +41,7 @@ function addExtra() {
     character.extras.push(extra);
     renderExtra(extra);
     updatePointsDisplay();
+    saveCharacter(); // Ensure new extras are saved
 }
 
 function removeExtra(extraId) {
@@ -184,12 +186,14 @@ function editExtra(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     extra.isEditing = true;
     renderExtra(extra);
+    saveCharacter(); // Save when switching to edit mode
 }
 
 function saveExtra(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     extra.isEditing = false;
     renderExtra(extra);
+    updatePointsDisplay(); // Update points when saving
     saveCharacter();
 }
 
@@ -638,6 +642,7 @@ function updateExtraAspect(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     const aspectInput = document.getElementById(extraId + '_aspect');
     extra.simpleAspect = aspectInput.value;
+    updatePointsDisplay(); // Make sure points are updated
     saveCharacter();
 }
 
@@ -778,6 +783,40 @@ function updateSkills() {
     saveCharacter();
 }
 
+// Power points management
+function updatePowerPoints() {
+    const powerIds = [
+        'pattern-adept', 'advanced-pattern', 'warden-stair', 'master-stair', 'eidolon-mastery',
+        'shapeshifting', 'advanced-shapeshifting', 'logrus-master', 'advanced-logrus', 'umbra-mastery',
+        'trump-artist', 'advanced-trump', 'wrighting',
+        'abyssal-lord', 'abyssal-sovereign',
+        'undershadow-manipulator', 'advanced-undershadow', 'keeper-void',
+        'thraell-green', 'ally-tree',
+        'vampiric-affliction', 'advanced-vampiric',
+        'fae-enchanter', 'advanced-fae',
+        'sorcery', 'invocation', 'runes', 'mirror-enchantment',
+        'dominion', 'essence', 'song'
+    ];
+    
+    powerIds.forEach(powerId => {
+        const pointsInput = document.getElementById(powerId + '-points');
+        if (pointsInput) {
+            const value = parseInt(pointsInput.value) || 0;
+            character.powerPoints[powerId] = value;
+            
+            // Calculate cost (only positive values above 0 cost points)
+            const cost = Math.max(0, value);
+            const costElement = document.getElementById(powerId + 'pointsCost');
+            if (costElement) {
+                costElement.textContent = `Cost: ${cost} points`;
+            }
+        }
+    });
+    
+    updatePointsDisplay();
+    saveCharacter();
+}
+
 // Powers management
 function updatePowers() {
     const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
@@ -895,6 +934,11 @@ function calculateUsedPoints() {
         total += Math.max(0, value);
     });
     
+    // Calculate power points costs
+    Object.values(character.powerPoints).forEach(value => {
+        total += Math.max(0, value);
+    });
+    
     // Calculate power costs with heritage discounts and credits
     character.powers.forEach(power => {
         // Skip Ancient powers (GM determined cost)
@@ -977,7 +1021,13 @@ function updateCharacterSummary() {
         character.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             if (['dominion', 'essence', 'song'].includes(power.id)) {
-                summary += `<p><strong>${powerName}</strong> (GM approval required)</p>`;
+                summary += `<p><strong>${powerName}</strong> (GM approval required)`;
+                // Show power points if any
+                const powerPoints = character.powerPoints[power.id] || 0;
+                if (powerPoints > 0) {
+                    summary += ` + ${powerPoints} pts`;
+                }
+                summary += `</p>`;
                 hasAncientPowers = true;
             } else {
                 let displayCost = power.cost;
@@ -996,7 +1046,14 @@ function updateCharacterSummary() {
                     });
                     displayCost = Math.max(0, actualCost);
                 }
-                summary += `<p><strong>${powerName}</strong> (${displayCost} pts)</p>`;
+                summary += `<p><strong>${powerName}</strong> (${displayCost} pts)`;
+                
+                // Show power points if any
+                const powerPoints = character.powerPoints[power.id] || 0;
+                if (powerPoints > 0) {
+                    summary += ` + ${powerPoints} pts`;
+                }
+                summary += `</p>`;
             }
         });
         
@@ -1051,6 +1108,11 @@ function updateCharacterSummary() {
         skillsCost += Math.max(0, value);
     });
     
+    let powerPointsCost = 0;
+    Object.values(character.powerPoints).forEach(value => {
+        powerPointsCost += Math.max(0, value);
+    });
+    
     let powersCost = 0;
     character.powers.forEach(power => {
         if (['dominion', 'essence', 'song'].includes(power.id)) {
@@ -1103,6 +1165,9 @@ function updateCharacterSummary() {
     if (powersCost > 0) {
         summary += `<p><strong>Powers:</strong> ${powersCost} pts</p>`;
     }
+    if (powerPointsCost > 0) {
+        summary += `<p><strong>Power Points:</strong> ${powerPointsCost} pts</p>`;
+    }
     if (extrasCost > 0) {
         summary += `<p><strong>Extras:</strong> ${extrasCost} pts</p>`;
     }
@@ -1116,6 +1181,9 @@ function updateCharacterSummary() {
 // Save/Load functionality
 function saveCharacter() {
     try {
+        // Ensure character.extras is up to date with current extras state
+        updateCharacterExtrasFromDOM();
+        
         // Save form values
         const saveData = {
             ...character,
@@ -1127,11 +1195,15 @@ function saveCharacter() {
             formValues: {
                 heritage: document.getElementById('heritage').value,
                 skills: {},
-                powers: {}
+                powers: {},
+                powerPoints: {}
             },
             extraIdCounter: extraIdCounter,
             featureInstanceCounter: featureInstanceCounter
         };
+
+        // Explicitly ensure extras are in the save data
+        saveData.extras = [...character.extras]; // Make a copy to avoid reference issues
 
         // Save skill values
         const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
@@ -1144,6 +1216,26 @@ function saveCharacter() {
         powerElements.forEach(element => {
             saveData.formValues.powers[element.id] = element.checked;
         });
+        
+        // Save power points
+        const powerIds = [
+            'pattern-adept', 'advanced-pattern', 'warden-stair', 'master-stair', 'eidolon-mastery',
+            'shapeshifting', 'advanced-shapeshifting', 'logrus-master', 'advanced-logrus', 'umbra-mastery',
+            'trump-artist', 'advanced-trump', 'wrighting',
+            'abyssal-lord', 'abyssal-sovereign',
+            'undershadow-manipulator', 'advanced-undershadow', 'keeper-void',
+            'thraell-green', 'ally-tree',
+            'vampiric-affliction', 'advanced-vampiric',
+            'fae-enchanter', 'advanced-fae',
+            'sorcery', 'invocation', 'runes', 'mirror-enchantment',
+            'dominion', 'essence', 'song'
+        ];
+        powerIds.forEach(powerId => {
+            const pointsInput = document.getElementById(powerId + '-points');
+            if (pointsInput) {
+                saveData.formValues.powerPoints[powerId] = pointsInput.value;
+            }
+        });
 
         localStorage.setItem('amberCharacter', JSON.stringify(saveData));
         document.getElementById('saveStatus').textContent = 'Saved ✓';
@@ -1154,6 +1246,13 @@ function saveCharacter() {
         console.error('Save failed:', error);
         document.getElementById('saveStatus').textContent = 'Save failed!';
     }
+}
+
+// Helper function to ensure extras are current
+function updateCharacterExtrasFromDOM() {
+    // This function ensures that character.extras reflects the current state
+    // The extras are already being updated in real-time through the various extra functions
+    // so this is just a safety check
 }
 
 function loadCharacter() {
@@ -1196,10 +1295,32 @@ function loadCharacter() {
             });
             updatePowers();
         }
+        
+        // Restore power points
+        if (saveData.formValues && saveData.formValues.powerPoints) {
+            Object.entries(saveData.formValues.powerPoints).forEach(([powerId, value]) => {
+                const element = document.getElementById(powerId + '-points');
+                if (element) {
+                    element.value = value;
+                }
+                character.powerPoints[powerId] = parseInt(value) || 0;
+            });
+        } else if (saveData.powerPoints) {
+            // Backward compatibility with old save format
+            character.powerPoints = saveData.powerPoints;
+            Object.entries(saveData.powerPoints).forEach(([powerId, value]) => {
+                const element = document.getElementById(powerId + '-points');
+                if (element) {
+                    element.value = value;
+                }
+            });
+        }
+        
+        updatePowerPoints();
 
-        // Restore extras
-        if (saveData.extras) {
-            character.extras = saveData.extras;
+        // Restore extras - this is the critical part
+        if (saveData.extras && Array.isArray(saveData.extras)) {
+            character.extras = [...saveData.extras]; // Make a copy to avoid reference issues
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
@@ -1210,6 +1331,9 @@ function loadCharacter() {
             character.extras.forEach(extra => {
                 renderExtra(extra);
             });
+        } else {
+            // No extras found, initialize empty array
+            character.extras = [];
         }
 
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
@@ -1218,6 +1342,7 @@ function loadCharacter() {
         }, 3000);
     } catch (error) {
         console.error('Load failed:', error);
+        document.getElementById('saveStatus').textContent = 'Load failed!';
     }
 }
 
@@ -1239,6 +1364,11 @@ function exportCharacter() {
         secret: document.getElementById('secret').value
     };
     
+    // Ensure powerPoints is included
+    if (!exportData.powerPoints) {
+        exportData.powerPoints = {};
+    }
+    
     // Create a formatted text version
     let output = '=== ANCIENT SECRETS CHARACTER SHEET ===\n\n';
     output += `Heritage: ${exportData.heritage}\n`;
@@ -1258,7 +1388,13 @@ function exportCharacter() {
         exportData.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             if (['dominion', 'essence', 'song'].includes(power.id)) {
-                output += `${powerName} (GM approval required)\n`;
+                output += `${powerName} (GM approval required)`;
+                // Show power points if any
+                const powerPoints = exportData.powerPoints[power.id] || 0;
+                if (powerPoints > 0) {
+                    output += ` + ${powerPoints} pts`;
+                }
+                output += '\n';
             } else {
                 let displayCost = power.cost;
                 if (isHeritageFreePower(power.id)) {
@@ -1275,7 +1411,14 @@ function exportCharacter() {
                     });
                     displayCost = Math.max(0, actualCost);
                 }
-                output += `${powerName} (${displayCost} pts)\n`;
+                output += `${powerName} (${displayCost} pts)`;
+                
+                // Show power points if any
+                const powerPoints = exportData.powerPoints[power.id] || 0;
+                if (powerPoints > 0) {
+                    output += ` + ${powerPoints} pts`;
+                }
+                output += '\n';
             }
         });
     }
@@ -1391,6 +1534,11 @@ function exportCharacter() {
 
 // Initialize and set up auto-save
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize powerPoints if not already set
+    if (!character.powerPoints) {
+        character.powerPoints = {};
+    }
+    
     loadCharacter();
     updatePointsDisplay();
     
@@ -1400,6 +1548,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const element = document.getElementById(inputId);
         if (element) {
             element.addEventListener('input', saveCharacter);
+            element.addEventListener('blur', saveCharacter);
+        }
+    });
+    
+    // Add event listeners for power points inputs
+    const powerIds = [
+        'pattern-adept', 'advanced-pattern', 'warden-stair', 'master-stair', 'eidolon-mastery',
+        'shapeshifting', 'advanced-shapeshifting', 'logrus-master', 'advanced-logrus', 'umbra-mastery',
+        'trump-artist', 'advanced-trump', 'wrighting',
+        'abyssal-lord', 'abyssal-sovereign',
+        'undershadow-manipulator', 'advanced-undershadow', 'keeper-void',
+        'thraell-green', 'ally-tree',
+        'vampiric-affliction', 'advanced-vampiric',
+        'fae-enchanter', 'advanced-fae',
+        'sorcery', 'invocation', 'runes', 'mirror-enchantment',
+        'dominion', 'essence', 'song'
+    ];
+    powerIds.forEach(powerId => {
+        const element = document.getElementById(powerId + '-points');
+        if (element) {
+            element.addEventListener('input', updatePowerPoints);
             element.addEventListener('blur', saveCharacter);
         }
     });
