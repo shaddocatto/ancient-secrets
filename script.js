@@ -16,16 +16,15 @@ let character = {
         lore: 0
     },
     powers: [],
-    powerLevels: {}, // Track power levels (0-12)
     extras: [],
-    totalPoints: 60, // Always 60 - never changes
+    totalPoints: 60,
     usedPoints: 0
 };
 
 let extraIdCounter = 0;
 let featureInstanceCounter = 0;
 
-// Extras management (unchanged - preserving all existing functionality)
+// Extras management
 function addExtra() {
     const extraId = 'extra_' + (++extraIdCounter);
     const extra = {
@@ -51,33 +50,20 @@ function removeExtra(extraId) {
 }
 
 function renderExtra(extra) {
-    console.log('renderExtra called for:', extra);
-    try {
-        const container = document.getElementById('extrasContainer');
-        if (!container) {
-            console.error('extrasContainer not found!');
-            return;
-        }
-        
-        const extraDiv = document.getElementById(extra.id) || document.createElement('div');
-        
-        if (!extraDiv.id) {
-            extraDiv.id = extra.id;
-            extraDiv.className = 'power-category';
-            extraDiv.style.marginBottom = '20px';
-            container.appendChild(extraDiv);
-            console.log('Created new extra div:', extraDiv.id);
-        }
-        
-        if (extra.isEditing) {
-            extraDiv.innerHTML = renderExtraEditMode(extra);
-        } else {
-            extraDiv.innerHTML = renderExtraDisplayMode(extra);
-        }
-        
-        console.log('Extra rendered successfully');
-    } catch (error) {
-        console.error('Error in renderExtra:', error);
+    const container = document.getElementById('extrasContainer');
+    const extraDiv = document.getElementById(extra.id) || document.createElement('div');
+    
+    if (!extraDiv.id) {
+        extraDiv.id = extra.id;
+        extraDiv.className = 'power-category';
+        extraDiv.style.marginBottom = '20px';
+        container.appendChild(extraDiv);
+    }
+    
+    if (extra.isEditing) {
+        extraDiv.innerHTML = renderExtraEditMode(extra);
+    } else {
+        extraDiv.innerHTML = renderExtraDisplayMode(extra);
     }
 }
 
@@ -556,10 +542,11 @@ function getAvailableFeatures(type) {
             { name: 'Base Cost', cost: 0.5, required: '', description: 'REQUIRED FIRST. Ally starts with an Aspect, one Skill at Amber (0), another at Chaos (-1), and 2 mild stress boxes.' },
             { name: 'Organization', cost: 1, required: 'Base Cost', description: 'Has many members. Ability to affect things at scale. Start with one face (named member).' },
             { name: 'Aspect', cost: 0.5, required: 'Base Cost', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
+            { name: 'Bound', cost: 1, required: 'Base Cost', description: 'May use Ally\'s senses, Skills, or Powers (w/ concentration).' },
             { name: 'Resolute', cost: 0.25, required: 'Base Cost', description: 'Gives Ally +1 to psychic defense.' },
             { name: 'Skilled', cost: 0.5, required: 'Base Cost', description: 'Additional Amber and Chaos skill plus 3 points to buy Skills, Powers, etc.' },
             { name: 'Sturdy', cost: 0.25, required: 'Base Cost', description: 'Add one mild stress box. If bought thrice, may add moderate boxes.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            { name: 'Higher Cost/Risk/Cursed', cost: -1, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
         ],
         domain: [
             { name: 'Aspect', cost: 0.25, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
@@ -569,7 +556,7 @@ function getAvailableFeatures(type) {
             { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
             { name: 'Focus', cost: 0.5, required: '', description: '+2 to a Skill when [describe circumstance].' },
             { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Domain.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            { name: 'Higher Cost/Risk/Cursed', cost: -1, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
         ],
         item: [
             { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
@@ -578,18 +565,23 @@ function getAvailableFeatures(type) {
             { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
             { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
             { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            { name: 'Higher Cost/Risk/Cursed', cost: -1, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
         ],
         mastery: [
             { name: 'Aspect', cost: 0.5, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Dominant', cost: 4, required: '', description: 'Choose one Skill to increase scale from Superior to Paragon. Only one Skill allowed.' },
+            { name: 'Dominant', cost: 4, required: '', description: 'Choose one Skill to increase scale from Superior to Legendary. Only one Skill allowed.' },
             { name: 'Exceptional', cost: 1, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
             { name: 'Flexible', cost: 1, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
             { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
             { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
+            { name: 'Immortal', cost: 1, required: '', description: 'Will recover from most any damage over time.' },
+            { name: 'Incandescent', cost: 1, required: '', description: 'Lose all Power initiations, immune to Unmaking.' },
+            { name: 'Primal Born', cost: 0, required: '', description: 'Requires Incandescent and Immortal, activated Ancient Heritage, see GM for cost and effects.' },
             { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
+            { name: 'Talented', cost: 0, required: '', description: 'Design a unique skill with custom abilities, see GM for cost.' },
             { name: 'Technique', cost: 0.5, required: '', description: 'Add one ability from a Power. If full Power acquired later, this refunds back.' },
-            { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
+            { name: 'Training', cost: 1, required: '', description: 'Costs 1 point per +1 to the Skill, see GM.' },
+            { name: 'Higher Cost/Risk/Cursed', cost: -1, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
         ]
     };
     
@@ -707,7 +699,7 @@ function calculateExtraCost(extra) {
     }
 }
 
-// Heritage management - FIXED to treat heritage as a purchase, not budget modifier
+// Heritage management
 function updateHeritage() {
     const heritage = document.getElementById('heritage').value;
     const heritageInfo = document.getElementById('heritageInfo');
@@ -715,6 +707,7 @@ function updateHeritage() {
     character.heritage = heritage;
     
     let heritageDescription = '';
+    let heritagePoints = 0;
     
     // Reset heritage-specific power states
     document.getElementById('pattern-adept').disabled = false;
@@ -723,21 +716,25 @@ function updateHeritage() {
     switch(heritage) {
         case 'recognized-amber':
             heritageDescription = 'Free Pattern Adept power. Gains Court position, Blood Curse, and Slow Regeneration.';
+            heritagePoints = 0;
             // Auto-enable Pattern Adept
             document.getElementById('pattern-adept').checked = true;
             document.getElementById('pattern-adept').disabled = true;
             break;
         case 'unrecognized-amber':
-            heritageDescription = 'Credit 5 points. Has Blood Curse and Slow Regeneration. Work with GM for details.';
+            heritageDescription = 'Gain 5 points. Has Blood Curse and Slow Regeneration. Work with GM for details.';
+            heritagePoints = 5;
             break;
         case 'chaos':
-            heritageDescription = 'Credit 2 points. Free Shapeshifting power.';
+            heritageDescription = 'Gain 2 points. Free Shapeshifting power.';
+            heritagePoints = 2;
             // Auto-enable Shapeshifting
             document.getElementById('shapeshifting').checked = true;
             document.getElementById('shapeshifting').disabled = true;
             break;
         case 'both':
             heritageDescription = 'Costs 3 points. Recognized status, Court position, Blood Curse, Slow Regeneration, Pattern, and Shapeshifting.';
+            heritagePoints = -3;
             // Auto-enable both Pattern and Shapeshifting
             document.getElementById('pattern-adept').checked = true;
             document.getElementById('pattern-adept').disabled = true;
@@ -745,10 +742,12 @@ function updateHeritage() {
             document.getElementById('shapeshifting').disabled = true;
             break;
         case 'other':
-            heritageDescription = 'Credit 6 points. Work with GM to create custom heritage.';
+            heritageDescription = 'Gain 6 points. Work with GM to create custom heritage.';
+            heritagePoints = 6;
             break;
         default:
             heritageDescription = '';
+            heritagePoints = 0;
             break;
     }
     
@@ -759,24 +758,13 @@ function updateHeritage() {
         heritageInfo.style.display = 'none';
     }
     
+    character.totalPoints = 60 + heritagePoints;
     updatePointsDisplay();
     updatePowers();
     saveCharacter();
 }
 
-// Calculate heritage cost (NEW FUNCTION)
-function getHeritageCost() {
-    switch(character.heritage) {
-        case 'recognized-amber': return 0; // Free
-        case 'unrecognized-amber': return -5; // Credit 5 points
-        case 'chaos': return -2; // Credit 2 points
-        case 'both': return 3; // Costs 3 points
-        case 'other': return -6; // Credit 6 points
-        default: return 0;
-    }
-}
-
-// Skills management (unchanged)
+// Skills management
 function updateSkills() {
     const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
     
@@ -793,7 +781,7 @@ function updateSkills() {
     saveCharacter();
 }
 
-// Powers management - updated to handle both access and levels
+// Powers management
 function updatePowers() {
     const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
     character.powers = [];
@@ -821,58 +809,12 @@ function updatePowers() {
         }
     });
     
-    // Update power level inputs
-    updatePowerLevelInputs();
-    
     // Update power costs display
     updatePowerCosts();
     updatePointsDisplay();
     saveCharacter();
 }
 
-// New function to handle power level inputs
-function updatePowerLevelInputs() {
-    const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
-    
-    powerElements.forEach(element => {
-        const powerId = element.id;
-        const levelInput = document.getElementById(powerId + '-level');
-        
-        if (levelInput) {
-            // Enable/disable level input based on power access
-            const hasAccess = element.checked;
-            levelInput.disabled = !hasAccess;
-            
-            if (!hasAccess) {
-                // Reset level to 0 if no access
-                levelInput.value = 0;
-                character.powerLevels[powerId] = 0;
-            } else {
-                // Ensure we have a level value
-                if (!character.powerLevels[powerId]) {
-                    character.powerLevels[powerId] = 0;
-                }
-                levelInput.value = character.powerLevels[powerId];
-            }
-        }
-    });
-}
-
-// New function to update individual power levels
-function updatePowerLevel(powerId) {
-    const levelInput = document.getElementById(powerId + '-level');
-    const value = parseInt(levelInput.value) || 0;
-    
-    // Clamp value between 0 and 12
-    const clampedValue = Math.max(0, Math.min(12, value));
-    levelInput.value = clampedValue;
-    character.powerLevels[powerId] = clampedValue;
-    
-    updatePointsDisplay();
-    saveCharacter();
-}
-
-// Update power costs (unchanged - preserves all credit mechanics)
 function updatePowerCosts() {
     const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
     
@@ -918,7 +860,6 @@ function updatePowerCosts() {
     });
 }
 
-// Heritage free power check (unchanged)
 function isHeritageFreePower(powerId) {
     const heritage = character.heritage;
     if (heritage === 'recognized-amber' && powerId === 'pattern-adept') return true;
@@ -927,22 +868,19 @@ function isHeritageFreePower(powerId) {
     return false;
 }
 
-// Points calculation - updated to include power levels
+// Points calculation
 function calculateUsedPoints() {
     let total = 0;
-    
-    // Add heritage cost/credit
-    total += getHeritageCost();
     
     // Calculate skill costs
     Object.values(character.skills).forEach(value => {
         total += Math.max(0, value);
     });
     
-    // Calculate power access costs with heritage discounts and credits
+    // Calculate power costs with heritage discounts and credits
     character.powers.forEach(power => {
         // Skip Ancient powers (GM determined cost)
-        if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
+        if (['dominion', 'essence', 'song'].includes(power.id)) {
             return;
         }
         
@@ -968,18 +906,7 @@ function calculateUsedPoints() {
         total += Math.max(0, powerCost); // Don't allow negative costs
     });
     
-    // Calculate power level costs
-    Object.entries(character.powerLevels).forEach(([powerId, level]) => {
-        if (level > 0) {
-            // Only count levels if the power is actually accessed
-            const hasPower = character.powers.some(p => p.id === powerId);
-            if (hasPower) {
-                total += Math.max(0, level); // 1 point per level
-            }
-        }
-    });
-    
-    // Calculate extras costs (unchanged)
+    // Calculate extras costs
     character.extras.forEach(extra => {
         total += calculateExtraCost(extra);
     });
@@ -1014,14 +941,7 @@ function updateCharacterSummary() {
     let summary = '<h3>Character Overview</h3>';
     
     if (character.heritage) {
-        const heritageName = character.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const heritageCost = getHeritageCost();
-        let costText = '';
-        if (heritageCost > 0) costText = ` (${heritageCost} pts)`;
-        else if (heritageCost < 0) costText = ` (${Math.abs(heritageCost)} pts credit)`;
-        else costText = ' (Free)';
-        
-        summary += `<p><strong>Heritage:</strong> ${heritageName}${costText}</p>`;
+        summary += `<p><strong>Heritage:</strong> ${character.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>`;
     }
     
     // Skills summary
@@ -1032,13 +952,13 @@ function updateCharacterSummary() {
         }
     });
     
-    // Powers summary - updated to show power levels
+    // Powers summary
     if (character.powers.length > 0) {
         summary += '<h4>Powers</h4>';
         let hasAncientPowers = false;
         character.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
+            if (['dominion', 'essence', 'song'].includes(power.id)) {
                 summary += `<p><strong>${powerName}</strong> (GM approval required)</p>`;
                 hasAncientPowers = true;
             } else {
@@ -1058,13 +978,7 @@ function updateCharacterSummary() {
                     });
                     displayCost = Math.max(0, actualCost);
                 }
-                
-                // Add power level information
-                const powerLevel = character.powerLevels[power.id] || 0;
-                const levelText = powerLevel > 0 ? ` [Level +${powerLevel}]` : '';
-                const levelCost = powerLevel > 0 ? ` + ${powerLevel} pts` : '';
-                
-                summary += `<p><strong>${powerName}</strong> (${displayCost} pts${levelCost})${levelText}</p>`;
+                summary += `<p><strong>${powerName}</strong> (${displayCost} pts)</p>`;
             }
         });
         
@@ -1073,7 +987,7 @@ function updateCharacterSummary() {
         }
     }
     
-    // Extras summary (unchanged)
+    // Extras summary
     if (character.extras.length > 0) {
         summary += '<h4>Extras</h4>';
         character.extras.forEach(extra => {
@@ -1118,7 +1032,7 @@ function updateCharacterSummary() {
     summaryDiv.innerHTML = summary;
 }
 
-// Save/Load functionality - updated to handle power levels and fix extras
+// Save/Load functionality
 function saveCharacter() {
     try {
         // Save form values
@@ -1132,8 +1046,7 @@ function saveCharacter() {
             formValues: {
                 heritage: document.getElementById('heritage').value,
                 skills: {},
-                powers: {},
-                powerLevels: {}
+                powers: {}
             },
             extraIdCounter: extraIdCounter,
             featureInstanceCounter: featureInstanceCounter
@@ -1151,16 +1064,6 @@ function saveCharacter() {
             saveData.formValues.powers[element.id] = element.checked;
         });
 
-        // Save power levels
-        const powerLevelElements = document.querySelectorAll('input[id$="-level"]');
-        powerLevelElements.forEach(element => {
-            const powerId = element.id.replace('-level', '');
-            saveData.formValues.powerLevels[powerId] = parseInt(element.value) || 0;
-        });
-
-        console.log('Saving character data:', saveData);
-        console.log('Extras being saved:', saveData.extras);
-        
         localStorage.setItem('amberCharacter', JSON.stringify(saveData));
         document.getElementById('saveStatus').textContent = 'Saved ✓';
         setTimeout(() => {
@@ -1175,13 +1078,9 @@ function saveCharacter() {
 function loadCharacter() {
     try {
         const saved = localStorage.getItem('amberCharacter');
-        if (!saved) {
-            console.log('No saved character found');
-            return;
-        }
+        if (!saved) return;
 
         const saveData = JSON.parse(saved);
-        console.log('Loading character data:', saveData);
         
         // Restore form values
         if (saveData.concept) document.getElementById('concept').value = saveData.concept;
@@ -1194,23 +1093,11 @@ function loadCharacter() {
         if (saveData.formValues && saveData.formValues.heritage) {
             document.getElementById('heritage').value = saveData.formValues.heritage;
             updateHeritage();
-        } else if (saveData.heritage) {
-            // Handle legacy saves
-            document.getElementById('heritage').value = saveData.heritage;
-            updateHeritage();
         }
 
         // Restore skills
         if (saveData.formValues && saveData.formValues.skills) {
             Object.entries(saveData.formValues.skills).forEach(([skill, value]) => {
-                if (document.getElementById(skill)) {
-                    document.getElementById(skill).value = value;
-                }
-            });
-            updateSkills();
-        } else if (saveData.skills) {
-            // Handle legacy saves
-            Object.entries(saveData.skills).forEach(([skill, value]) => {
                 if (document.getElementById(skill)) {
                     document.getElementById(skill).value = value;
                 }
@@ -1227,60 +1114,21 @@ function loadCharacter() {
                 }
             });
             updatePowers();
-        } else if (saveData.powers) {
-            // Handle legacy saves - powers were stored as array
-            if (Array.isArray(saveData.powers)) {
-                saveData.powers.forEach(power => {
-                    const element = document.getElementById(power.id);
-                    if (element) {
-                        element.checked = true;
-                    }
-                });
-                updatePowers();
-            }
         }
 
-        // Restore power levels
-        if (saveData.formValues && saveData.formValues.powerLevels) {
-            Object.entries(saveData.formValues.powerLevels).forEach(([powerId, level]) => {
-                const element = document.getElementById(powerId + '-level');
-                if (element) {
-                    element.value = level;
-                    character.powerLevels[powerId] = parseInt(level);
-                }
-            });
-        } else if (saveData.powerLevels) {
-            // Handle legacy saves
-            character.powerLevels = saveData.powerLevels || {};
-            Object.entries(character.powerLevels).forEach(([powerId, level]) => {
-                const element = document.getElementById(powerId + '-level');
-                if (element) {
-                    element.value = level;
-                }
-            });
-        }
-
-        // Restore extras - this is the critical part
-        if (saveData.extras && Array.isArray(saveData.extras)) {
-            console.log('Restoring extras:', saveData.extras);
+        // Restore extras
+        if (saveData.extras) {
             character.extras = saveData.extras;
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
             // Clear existing extras display
-            const extrasContainer = document.getElementById('extrasContainer');
-            if (extrasContainer) {
-                extrasContainer.innerHTML = '';
-                
-                // Re-render all extras
-                character.extras.forEach((extra, index) => {
-                    console.log(`Rendering extra ${index}:`, extra);
-                    renderExtra(extra);
-                });
-            }
-        } else {
-            console.log('No extras found in save data');
-            character.extras = [];
+            document.getElementById('extrasContainer').innerHTML = '';
+            
+            // Re-render all extras
+            character.extras.forEach(extra => {
+                renderExtra(extra);
+            });
         }
 
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
@@ -1289,10 +1137,6 @@ function loadCharacter() {
         }, 3000);
     } catch (error) {
         console.error('Load failed:', error);
-        document.getElementById('saveStatus').textContent = 'Load failed - starting fresh';
-        // Initialize empty character if load fails
-        character.extras = [];
-        character.powerLevels = {};
     }
 }
 
@@ -1302,31 +1146,6 @@ function resetCharacter() {
         location.reload();
     }
 }
-
-// Debug function to help recover lost data
-function debugLocalStorage() {
-    const saved = localStorage.getItem('amberCharacter');
-    if (saved) {
-        console.log('Raw localStorage data:', saved);
-        try {
-            const parsed = JSON.parse(saved);
-            console.log('Parsed data:', parsed);
-            if (parsed.extras) {
-                console.log('Extras found:', parsed.extras);
-            } else {
-                console.log('No extras in save data');
-            }
-        } catch (e) {
-            console.error('Error parsing save data:', e);
-        }
-    } else {
-        console.log('No data in localStorage');
-    }
-}
-
-// Add this to window for easy access in console
-window.debugLocalStorage = debugLocalStorage;
-window.character = character;
 
 function exportCharacter() {
     // Collect all form data
@@ -1341,18 +1160,7 @@ function exportCharacter() {
     
     // Create a formatted text version
     let output = '=== ANCIENT SECRETS CHARACTER SHEET ===\n\n';
-    
-    if (exportData.heritage) {
-        const heritageName = exportData.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const heritageCost = getHeritageCost();
-        let costText = '';
-        if (heritageCost > 0) costText = ` (${heritageCost} pts)`;
-        else if (heritageCost < 0) costText = ` (${Math.abs(heritageCost)} pts credit)`;
-        else costText = ' (Free)';
-        
-        output += `Heritage: ${heritageName}${costText}\n`;
-    }
-    
+    output += `Heritage: ${exportData.heritage}\n`;
     output += `Concept: ${exportData.concept}\n`;
     output += `Position: ${exportData.position}\n`;
     output += `Trouble: ${exportData.trouble}\n`;
@@ -1368,7 +1176,7 @@ function exportCharacter() {
         output += '\n=== POWERS ===\n';
         exportData.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) {
+            if (['dominion', 'essence', 'song'].includes(power.id)) {
                 output += `${powerName} (GM approval required)\n`;
             } else {
                 let displayCost = power.cost;
@@ -1386,13 +1194,7 @@ function exportCharacter() {
                     });
                     displayCost = Math.max(0, actualCost);
                 }
-                
-                // Add power level information
-                const powerLevel = character.powerLevels[power.id] || 0;
-                const levelText = powerLevel > 0 ? ` [Level +${powerLevel}]` : '';
-                const levelCost = powerLevel > 0 ? ` + ${powerLevel} pts` : '';
-                
-                output += `${powerName} (${displayCost} pts${levelCost})${levelText}\n`;
+                output += `${powerName} (${displayCost} pts)\n`;
             }
         });
     }
@@ -1486,11 +1288,6 @@ function exportCharacter() {
 
 // Initialize and set up auto-save
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize powerLevels if it doesn't exist
-    if (!character.powerLevels) {
-        character.powerLevels = {};
-    }
-    
     loadCharacter();
     updatePointsDisplay();
     
@@ -1503,8 +1300,4 @@ document.addEventListener('DOMContentLoaded', function() {
             element.addEventListener('blur', saveCharacter);
         }
     });
-    
-    // Debug: Check if addExtra function is available
-    console.log('addExtra function available:', typeof addExtra);
-    console.log('Current extras:', character.extras);
 });

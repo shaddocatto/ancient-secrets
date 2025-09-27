@@ -25,11 +25,11 @@
                 <label for="heritage">Choose your Heritage:</label>
                 <select id="heritage" onchange="updateHeritage()">
                     <option value="">Select Heritage...</option>
-                    <option value="recognized-amber">Recognized Amber (free - Court position, Blood Curse, Slow Regeneration, Pattern Adept)</option>
-                    <option value="unrecognized-amber">Unrecognized Amber (credit 5 pts - Blood Curse, Slow Regeneration, see GM)</option>
-                    <option value="chaos">Chaos (credit 2 pts - Shapeshifting free)</option>
-                    <option value="both">Both Amber and Chaos (cost 3 pts - Recognized, Court position, Blood Curse, Slow Regeneration, Pattern, and Shapeshifting)</option>
-                    <option value="other">Other (credit 6 pts - work with GM to create)</option>
+                    <option value="recognized-amber">Recognized Amber (Free - Court position, Blood Curse, Slow Regeneration, Pattern Adept)</option>
+                    <option value="unrecognized-amber">Unrecognized Amber (+5 pts - Blood Curse, Slow Regeneration, see GM)</option>
+                    <option value="chaos">Chaos (+2 pts - Shapeshifting free)</option>
+                    <option value="both">Both Amber and Chaos (-3 pts - All benefits)</option>
+                    <option value="other">Other (+6 pts - Work with GM)</option>
                 </select>
                 <div id="heritageInfo" class="heritage-info" style="display: none;"></div>
             </div>
@@ -119,7 +119,7 @@
         <!-- Powers -->
         <div class="section">
             <h2>Powers</h2>
-            <p style="margin-bottom: 20px; color: #cccccc;">All Powers require appropriate Heritage and/or Permission Aspect to access. Once accessed, you can spend points to increase your level (1 pt per level, max +12).</p>
+            <p style="margin-bottom: 20px; color: #cccccc;">All Powers require appropriate Heritage and/or Permission Aspect to access.</p>
             <div class="powers-grid">
                 <!-- Powers of Order -->
                 <div class="power-category">
@@ -131,11 +131,6 @@
                             Pattern Adept
                         </label>
                         <div class="power-description">Requires: Amber Heritage; Amber (0) Endurance. Shadow Travel, Hellride, Shadow of Desire, Resources, Manipulate Probability, Pattern Psychic Defense</div>
-                        <div class="power-level-container">
-                            <label for="pattern-adept-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="pattern-adept-level" min="0" max="12" value="0" onchange="updatePowerLevel('pattern-adept')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -144,11 +139,6 @@
                             Advanced Pattern Adept
                         </label>
                         <div class="power-description">Requires: Pattern Adept; Amber (0) Psyche. Pattern Lens, Mold Shadow, Walk the Pattern of the mind, Edit Pattern</div>
-                        <div class="power-level-container">
-                            <label for="advanced-pattern-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="advanced-pattern-level" min="0" max="12" value="0" onchange="updatePowerLevel('advanced-pattern')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -157,11 +147,6 @@
                             Warden of the Grand Stair
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche. Open and Close Doors, Wayfinding, Piercing Veil, Exegesis</div>
-                        <div class="power-level-container">
-                            <label for="warden-stair-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="warden-stair-level" min="0" max="12" value="0" onchange="updatePowerLevel('warden-stair')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -170,11 +155,6 @@
                             Master of the Grand Stair
                         </label>
                         <div class="power-description">Requires: Warden; Amber (0) Psyche, Chaos (-1) Endurance. Ward Doors, Control Doors, Making Keys, Advanced abilities</div>
-                        <div class="power-level-container">
-                            <label for="master-stair-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="master-stair-level" min="0" max="12" value="0" onchange="updatePowerLevel('master-stair')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -183,11 +163,6 @@
                             Eidolon Mastery
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche. Immortality, Edit reality, Guide reality, Sanctification</div>
-                        <div class="power-level-container">
-                            <label for="eidolon-mastery-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="eidolon-mastery-level" min="0" max="12" value="0" onchange="updatePowerLevel('eidolon-mastery')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                 </div>
 
@@ -201,11 +176,6 @@
                             Shapeshifting
                         </label>
                         <div class="power-description">Requires: Chaos Heritage; Chaos (-1) Strength and Endurance. Assume Known Shape, Automatic Shifting, Demon Form, Healing, Primal Form</div>
-                        <div class="power-level-container">
-                            <label for="shapeshifting-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="shapeshifting-level" min="0" max="12" value="0" onchange="updatePowerLevel('shapeshifting')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -214,11 +184,6 @@
                             Advanced Shapeshifting
                         </label>
                         <div class="power-description">Requires: Shapeshifting; Amber (0) Strength, Endurance, Psyche. Duplicate Other, Shape Aura, Shape Other</div>
-                        <div class="power-level-container">
-                            <label for="advanced-shapeshifting-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="advanced-shapeshifting-level" min="0" max="12" value="0" onchange="updatePowerLevel('advanced-shapeshifting')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -226,12 +191,7 @@
                             <span class="power-cost" id="logrus-master-cost">4</span>
                             Logrus Master
                         </label>
-                        <div class="power-description">Requires: Shapeshifting; Amber (0) Psyche, Chaos (-1) Endurance. Logrus Tendrils, Hang Spells, Find in Shadow</div>
-                        <div class="power-level-container">
-                            <label for="logrus-master-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="logrus-master-level" min="0" max="12" value="0" onchange="updatePowerLevel('logrus-master')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
+                        <div class="power-description">Requires: Shapeshifting; Chaos Heritage; Amber (0) Psyche, Chaos (-1) Endurance. Logrus Tendrils, Hang Spells, Find in Shadow</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -240,11 +200,6 @@
                             Advanced Logrus Master
                         </label>
                         <div class="power-description">Requires: Logrus Master; Amber (0) Psyche and Endurance. Alter Shadow, Create Primal Chaos, Logrus Healing</div>
-                        <div class="power-level-container">
-                            <label for="advanced-logrus-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="advanced-logrus-level" min="0" max="12" value="0" onchange="updatePowerLevel('advanced-logrus')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -252,12 +207,7 @@
                             <span class="power-cost" id="umbra-mastery-cost">8</span>
                             Umbra Mastery
                         </label>
-                        <div class="power-description">Requires: Amber (0) Psyche. Perceiving Umbra, Control Reality, Evolution, Immortality, Regeneration</div>
-                        <div class="power-level-container">
-                            <label for="umbra-mastery-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="umbra-mastery-level" min="0" max="12" value="0" onchange="updatePowerLevel('umbra-mastery')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
+                        <div class="power-description">Requires: Amber (0) Psyche. Perceiving Umbra, Control Reality, Evolution, Immortality, Regeneration, Identify Door, Force Door Open</div>
                     </div>
                 </div>
 
@@ -270,12 +220,7 @@
                             <span class="power-cost" id="trump-artist-cost">4</span>
                             Trump Artist
                         </label>
-                        <div class="power-description">Requires: Chaos (-1) Psyche. Create Trump, Identify Trump, Imbue Trump Artifacts, Trump Defense</div>
-                        <div class="power-level-container">
-                            <label for="trump-artist-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="trump-artist-level" min="0" max="12" value="0" onchange="updatePowerLevel('trump-artist')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
+                        <div class="power-description">Requires: Chaos (-1) Psyche. Create Trump, Identify Trump, Imbue Trump Artifacts, Sense Trump, Trump Defense, Trump Sketch</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -283,31 +228,21 @@
                             <span class="power-cost" id="advanced-trump-cost">6</span>
                             Advanced Trump Artist
                         </label>
-                        <div class="power-description">Requires: Trump Artist; Amber (0) Psyche. Trump Gate, Trump Jamming, Trump Memory, Trump Trap</div>
-                        <div class="power-level-container">
-                            <label for="advanced-trump-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="advanced-trump-level" min="0" max="12" value="0" onchange="updatePowerLevel('advanced-trump')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
+                        <div class="power-description">Requires: Trump Artist; Amber (0) Psyche. Trump Duplication, Trump Gate, Trump Jamming, Trump Memory, Trump Trap</div>
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="wrighting" onchange="updatePowers()" data-cost="4" data-credit="trump-artist:-2,advanced-trump:-3">
+                            <input type="checkbox" id="wrighting" onchange="updatePowers()" data-cost="4" data-credit="trump-artist:-1,advanced-trump:-3">
                             <span class="power-cost" id="wrighting-cost">4</span>
                             Wrighting
                         </label>
-                        <div class="power-description">Requires: Amber (0) Psyche. Create Icon, Impromptu Icon, Defense, Creating Icon-Powered Artifacts</div>
-                        <div class="power-level-container">
-                            <label for="wrighting-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="wrighting-level" min="0" max="12" value="0" onchange="updatePowerLevel('wrighting')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
+                        <div class="power-description">Requires: Amber (0) Psyche. Create Icon, Impromptu or Temporary Icon, Defense, Identify Icon, Creating Icon-Powered Artifacts</div>
                     </div>
                 </div>
 
-                <!-- Powers of the Abyss -->
+                <!-- Powers of Darkness -->
                 <div class="power-category">
-                    <h3>Powers of the Abyss</h3>
+                    <h3>Powers of Darkness</h3>
                     <div class="power-item">
                         <label>
                             <input type="checkbox" id="abyssal-lord" onchange="updatePowers()" data-cost="4" data-prereq="">
@@ -315,11 +250,6 @@
                             Abyssal Lord
                         </label>
                         <div class="power-description">Requires: Initiation into the Abyss; Amber (0) Psyche, Chaos (-1) Endurance. Summon/Control Souls/Dead, Abyssal Power, Teleportation</div>
-                        <div class="power-level-container">
-                            <label for="abyssal-lord-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="abyssal-lord-level" min="0" max="12" value="0" onchange="updatePowerLevel('abyssal-lord')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -328,11 +258,6 @@
                             Abyssal Sovereign
                         </label>
                         <div class="power-description">Requires: Abyssal Lord; Amber (0) Psyche and Endurance. Create Abyssal Constructs, Imbue with Abyssal Power, Soul Jar</div>
-                        <div class="power-level-container">
-                            <label for="abyssal-sovereign-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="abyssal-sovereign-level" min="0" max="12" value="0" onchange="updatePowerLevel('abyssal-sovereign')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                 </div>
 
@@ -346,11 +271,6 @@
                             Undershadow Manipulator
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche, Chaos (-1) Status. Open Portal, Summon/Bind Undershadow Creatures</div>
-                        <div class="power-level-container">
-                            <label for="undershadow-manipulator-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="undershadow-manipulator-level" min="0" max="12" value="0" onchange="updatePowerLevel('undershadow-manipulator')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -359,24 +279,14 @@
                             Advanced Undershadow Manipulator
                         </label>
                         <div class="power-description">Requires: Undershadow Manipulator; Amber (0) Psyche and Status. Manipulate Undershadow, Imbue Undershadow, Scry Undershadow</div>
-                        <div class="power-level-container">
-                            <label for="advanced-undershadow-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="advanced-undershadow-level" min="0" max="12" value="0" onchange="updatePowerLevel('advanced-undershadow')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="keeper-void" onchange="updatePowers()" data-cost="4" data-credit="undershadow-manipulator:-1,advanced-undershadow:-2">
+                            <input type="checkbox" id="keeper-void" onchange="updatePowers()" data-cost="4" data-credit="undershadow-manipulator:-1,advanced-undershadow:-3">
                             <span class="power-cost" id="keeper-void-cost">4</span>
                             Keeper of the Void
                         </label>
                         <div class="power-description">Requires: Initiation into the Void; Amber (0) Psyche, Chaos (-1) Endurance. Find rift into Void, Survive Void, Communicate with creatures of the deep, Command Undershadow and Void creatures</div>
-                        <div class="power-level-container">
-                            <label for="keeper-void-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="keeper-void-level" min="0" max="12" value="0" onchange="updatePowerLevel('keeper-void')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                 </div>
 
@@ -390,11 +300,6 @@
                             Thraell of The Green
                         </label>
                         <div class="power-description">Requires: Initiation into the Green; Chaos (-1) Strength and Endurance. Communicate with nature, manifest the Green</div>
-                        <div class="power-level-container">
-                            <label for="thraell-green-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="thraell-green-level" min="0" max="12" value="0" onchange="updatePowerLevel('thraell-green')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -403,11 +308,6 @@
                             Ally of The Tree
                         </label>
                         <div class="power-description">Requires: Mutual agreement; Amber (0) Strength and Endurance. Commune with Green, Travel within Green, Sustain Green</div>
-                        <div class="power-level-container">
-                            <label for="ally-tree-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="ally-tree-level" min="0" max="12" value="0" onchange="updatePowerLevel('ally-tree')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                 </div>
 
@@ -421,11 +321,6 @@
                             Vampiric Affliction
                         </label>
                         <div class="power-description">Requires: Vampire Heritage; Chaos (-1) Endurance. Enhance using blood, entrance weaker wills, shapeshift, damaged by sunlight</div>
-                        <div class="power-level-container">
-                            <label for="vampiric-affliction-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="vampiric-affliction-level" min="0" max="12" value="0" onchange="updatePowerLevel('vampiric-affliction')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -434,11 +329,6 @@
                             Advanced Vampiric Affliction
                         </label>
                         <div class="power-description">Requires: Vampiric Affliction; Amber (0) Endurance, Chaos (-1) Strength and Status. Control lesser vampires, invoke Hunger, blood sorcery</div>
-                        <div class="power-level-container">
-                            <label for="advanced-vampiric-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="advanced-vampiric-level" min="0" max="12" value="0" onchange="updatePowerLevel('advanced-vampiric')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                 </div>
 
@@ -452,11 +342,6 @@
                             Fae Enchanter
                         </label>
                         <div class="power-description">Requires: Faerie Heritage; Chaos (-1) Status and Intrigue. Local Glamour, Binding Promises, Minor Blessings/Curses</div>
-                        <div class="power-level-container">
-                            <label for="fae-enchanter-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="fae-enchanter-level" min="0" max="12" value="0" onchange="updatePowerLevel('fae-enchanter')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -465,11 +350,6 @@
                             Advanced Fae Enchanter
                         </label>
                         <div class="power-description">Requires: Faerie Heritage; Amber (0) Status and Intrigue, Chaos (-1) Lore. Widespread Glamour, Major Blessings/Curses</div>
-                        <div class="power-level-container">
-                            <label for="advanced-fae-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="advanced-fae-level" min="0" max="12" value="0" onchange="updatePowerLevel('advanced-fae')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                 </div>
 
@@ -483,11 +363,6 @@
                             Sorcery and Conjuration
                         </label>
                         <div class="power-description">Requires: Chaos (-1) Lore and power source. Develop Spell, Cast Spell, Conjure Shadow, Empowerment, Imbue, Create</div>
-                        <div class="power-level-container">
-                            <label for="sorcery-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="sorcery-level" min="0" max="12" value="0" onchange="updatePowerLevel('sorcery')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -495,12 +370,7 @@
                             <span class="power-cost" id="invocation-cost">3</span>
                             Invocation
                         </label>
-                        <div class="power-description">Requires: Chaos (-1) Psyche. True Name powers (Divine, Call, Summon, Banish, Compel, Bind), Purification</div>
-                        <div class="power-level-container">
-                            <label for="invocation-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="invocation-level" min="0" max="12" value="0" onchange="updatePowerLevel('invocation')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
+                        <div class="power-description">Requires: Amber (0) Psyche and Lore. True Name powers (Divine, Call, Summon, Banish, Compel, Bind), Purification</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -509,11 +379,6 @@
                             The Runes
                         </label>
                         <div class="power-description">Requires: Ranked (+1) Lore. Enhance/diminish powers, create/break connections, alter local reality</div>
-                        <div class="power-level-container">
-                            <label for="runes-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="runes-level" min="0" max="12" value="0" onchange="updatePowerLevel('runes')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -522,11 +387,6 @@
                             Mirror Enchantment
                         </label>
                         <div class="power-description">Requires: Shroudling/Vampire Heritage; Chaos (-1) Psyche and Lore. Enchanted mirrors, travel mirror-lands, call forth reflections</div>
-                        <div class="power-level-container">
-                            <label for="mirror-enchantment-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="mirror-enchantment-level" min="0" max="12" value="0" onchange="updatePowerLevel('mirror-enchantment')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">1 pt per level</span>
-                        </div>
                     </div>
                 </div>
 
@@ -540,12 +400,7 @@
                             <span class="power-cost" id="dominion-cost">GM</span>
                             Dominion
                         </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Establish Domain, Empower Domain, Control Domain</div>
-                        <div class="power-level-container">
-                            <label for="dominion-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="dominion-level" min="0" max="12" value="0" onchange="updatePowerLevel('dominion')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">GM determines cost</span>
-                        </div>
+                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Status. Establish Domain, Empower Domain, Control Domain</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -553,51 +408,15 @@
                             <span class="power-cost" id="essence-cost">GM</span>
                             Essence
                         </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Strength and Endurance. True Form (Invoke, Reveal, Empower), Banner Control</div>
-                        <div class="power-level-container">
-                            <label for="essence-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="essence-level" min="0" max="12" value="0" onchange="updatePowerLevel('essence')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">GM determines cost</span>
-                        </div>
+                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Endurance. True Form (Invoke, Reveal, Empower), Banner Control</div>
                     </div>
                     <div class="power-item">
                         <label>
                             <input type="checkbox" id="song" onchange="updatePowers()" data-cost="0" data-prereq="">
                             <span class="power-cost" id="song-cost">GM</span>
-                            Song
+                            The Song
                         </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Join The Song, Guide The Song, Add To The Song</div>
-                        <div class="power-level-container">
-                            <label for="song-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="song-level" min="0" max="12" value="0" onchange="updatePowerLevel('song')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">GM determines cost</span>
-                        </div>
-                    </div>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="making" onchange="updatePowers()" data-cost="0" data-prereq="">
-                            <span class="power-cost" id="making-cost">GM</span>
-                            Making
-                        </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Create Substance, Create Essence, Enhance Existence</div>
-                        <div class="power-level-container">
-                            <label for="making-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="making-level" min="0" max="12" value="0" onchange="updatePowerLevel('making')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">GM determines cost</span>
-                        </div>
-                    </div>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="unmaking" onchange="updatePowers()" data-cost="0" data-prereq="">
-                            <span class="power-cost" id="unmaking-cost">GM</span>
-                            Unmaking
-                        </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Destroy Substance, Destroy Essence, Destroy Existence</div>
-                        <div class="power-level-container">
-                            <label for="unmaking-level" style="font-size: 0.8em; margin-top: 5px;">Level (0-12):</label>
-                            <input type="number" id="unmaking-level" min="0" max="12" value="0" onchange="updatePowerLevel('unmaking')" disabled style="width: 60px; padding: 5px; font-size: 0.8em;">
-                            <span style="font-size: 0.7em; color: #EFBF04; margin-left: 5px;">GM determines cost</span>
-                        </div>
+                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Hear the Song, Join the Song, Guide the Song, Add to the Song</div>
                     </div>
                 </div>
             </div>
