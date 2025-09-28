@@ -236,7 +236,9 @@ function addExtra() {
         name: '',
         type: '',
         isSimple: true,
-        simpleAspect: '',
+        // Support multiple aspects for simple extras.  Initialize with a single empty string.
+        simpleAspects: [''],
+        simpleAspect: '', // legacy field retained for backward compatibility
         features: [],
         isEditing: true
     };
@@ -272,6 +274,19 @@ function renderExtra(extra) {
 }
 
 function renderExtraEditMode(extra) {
+    // Build HTML for multiple simple aspect inputs.  Extra.simpleAspects will always
+    // contain at least one element (initialized on extra creation or normalized
+    // during load).  Additional aspects beyond the first cost 1 point each.
+    const aspectsHtml = (extra.simpleAspects && Array.isArray(extra.simpleAspects) ? extra.simpleAspects : [extra.simpleAspect || '']).map((asp, idx) => {
+        return `
+            <div class="aspect-field" style="display:flex; align-items:center; margin-bottom:5px;">
+                <input type="text" id="${extra.id}_aspect_${idx}" value="${asp || ''}" placeholder="e.g., Swift as the Wind"
+                       onchange="updateExtraAspect('${extra.id}', ${idx})" style="flex:1; margin-right:5px;">
+                ${idx > 0 ? `<button type="button" class="remove-instance-btn" onclick="removeSimpleAspect('${extra.id}', ${idx})">×</button>` : ''}
+            </div>
+        `;
+    }).join('');
+
     return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0;">Extra: ${extra.name || 'Unnamed'}</h3>
@@ -310,8 +325,9 @@ function renderExtraEditMode(extra) {
         
         <div id="${extra.id}_simple_options" style="display: ${extra.isSimple ? 'block' : 'none'};">
             <div class="form-group">
-                <label>Aspect:</label>
-                <input type="text" id="${extra.id}_aspect" value="${extra.simpleAspect}" placeholder="e.g., Swift as the Wind, Unbreakable Bond" onchange="updateExtraAspect('${extra.id}')">
+                <label>Aspect${extra.simpleAspects && extra.simpleAspects.length > 1 ? 's' : ''}:</label>
+                ${aspectsHtml}
+                <button type="button" class="add-instance-btn" onclick="addSimpleAspect('${extra.id}')" style="margin-top: 5px; font-size: 0.8em;">Add Aspect</button>
             </div>
             <div class="heritage-info">
                 <strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.
@@ -336,9 +352,21 @@ function renderExtraDisplayMode(extra) {
     
     let details = '';
     // Build detailed description for the extra
-    if (extra.isSimple && extra.simpleAspect) {
-        // Simple extras just display the aspect
-        details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspect: ${extra.simpleAspect}</div>`;
+    if (extra.isSimple) {
+        // Display one or more aspects for simple extras
+        let aspects = [];
+        if (extra.simpleAspects && Array.isArray(extra.simpleAspects) && extra.simpleAspects.length > 0) {
+            aspects = extra.simpleAspects.filter(a => a && a.trim() !== '');
+        } else if (extra.simpleAspect) {
+            aspects = [extra.simpleAspect];
+        }
+        if (aspects.length > 0) {
+            if (aspects.length === 1) {
+                details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspect: ${aspects[0]}</div>`;
+            } else {
+                details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspects: ${aspects.join(', ')}</div>`;
+            }
+        }
     } else if (!extra.isSimple && extra.features.length > 0) {
         // Build a list of details for each feature instance
         const lines = [];
@@ -858,10 +886,49 @@ function updateExtraMode(extraId, isSimple) {
     saveCharacter();
 }
 
-function updateExtraAspect(extraId) {
+// Update a specific simple aspect.  The index parameter identifies which
+// aspect is being edited.  If undefined, defaults to index 0 to support
+// backwards compatibility with single-aspect extras.
+function updateExtraAspect(extraId, index = 0) {
     const extra = character.extras.find(e => e.id === extraId);
-    const aspectInput = document.getElementById(extraId + '_aspect');
-    extra.simpleAspect = aspectInput.value;
+    // Ensure the simpleAspects array exists
+    if (!extra.simpleAspects || !Array.isArray(extra.simpleAspects)) {
+        extra.simpleAspects = [];
+    }
+    const input = document.getElementById(`${extraId}_aspect_${index}`);
+    if (input) {
+        extra.simpleAspects[index] = input.value;
+    }
+    // Maintain legacy simpleAspect for backward compatibility
+    extra.simpleAspect = extra.simpleAspects[0] || '';
+    updatePointsDisplay();
+    saveCharacter();
+}
+
+// Add a new empty aspect to a simple extra.  Additional aspects cost
+// 1 point each beyond the first.
+function addSimpleAspect(extraId) {
+    const extra = character.extras.find(e => e.id === extraId);
+    if (!extra.simpleAspects || !Array.isArray(extra.simpleAspects)) {
+        extra.simpleAspects = [extra.simpleAspect || ''];
+    }
+    extra.simpleAspects.push('');
+    renderExtra(extra);
+    updatePointsDisplay();
+    saveCharacter();
+}
+
+// Remove an aspect by index.  Do not remove the last remaining aspect.
+function removeSimpleAspect(extraId, index) {
+    const extra = character.extras.find(e => e.id === extraId);
+    if (!extra.simpleAspects || extra.simpleAspects.length <= 1) {
+        return;
+    }
+    extra.simpleAspects.splice(index, 1);
+    // Update legacy simpleAspect
+    extra.simpleAspect = extra.simpleAspects[0] || '';
+    renderExtra(extra);
+    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -869,6 +936,12 @@ function calculateExtraCost(extra) {
     if (!extra.type) return 0;
     
     if (extra.isSimple) {
+        // Simple extras cost 1 point for the first aspect and 1 point for each
+        // additional aspect beyond the first.  If no aspects are defined,
+        // default to a cost of 1.
+        if (extra.simpleAspects && Array.isArray(extra.simpleAspects)) {
+            return Math.max(1, extra.simpleAspects.length);
+        }
         return 1;
     } else {
         return extra.features.reduce((total, feature) => {
@@ -1132,8 +1205,21 @@ function updateCharacterSummary() {
             // Start list item
             html += `<li>${extraName}${extraType}${costText}`;
             let detailLines = [];
-            if (extra.isSimple && extra.simpleAspect) {
-                detailLines.push(`Aspect: ${extra.simpleAspect}`);
+            if (extra.isSimple) {
+                // Simple extras: collate one or more aspects
+                let aspects = [];
+                if (extra.simpleAspects && Array.isArray(extra.simpleAspects) && extra.simpleAspects.length > 0) {
+                    aspects = extra.simpleAspects.filter(a => a && a.trim() !== '');
+                } else if (extra.simpleAspect) {
+                    aspects = [extra.simpleAspect];
+                }
+                if (aspects.length > 0) {
+                    if (aspects.length === 1) {
+                        detailLines.push(`Aspect: ${aspects[0]}`);
+                    } else {
+                        detailLines.push(`Aspects: ${aspects.join(', ')}`);
+                    }
+                }
             } else if (!extra.isSimple && extra.features.length > 0) {
                 // Produce detailed descriptions per feature
                 extra.features.forEach(feature => {
@@ -1344,6 +1430,20 @@ function loadCharacter() {
             character.extras = saveData.extras;
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
+
+            // Normalize older extras to ensure multiple simple aspects are supported
+            character.extras.forEach(extra => {
+                if (extra.isSimple) {
+                    // If the new simpleAspects array is missing, derive it from the legacy simpleAspect field
+                    if (!extra.simpleAspects || !Array.isArray(extra.simpleAspects)) {
+                        if (extra.simpleAspect && extra.simpleAspect.trim() !== '') {
+                            extra.simpleAspects = [extra.simpleAspect];
+                        } else {
+                            extra.simpleAspects = [''];
+                        }
+                    }
+                }
+            });
             
             document.getElementById('extrasContainer').innerHTML = '';
             
@@ -1487,8 +1587,21 @@ function exportCharacter() {
             
             output += `${extraName}${extraType}${costText}\n`;
             
-            if (extra.isSimple && extra.simpleAspect) {
-                output += `  Aspect: ${extra.simpleAspect}\n`;
+            if (extra.isSimple) {
+                // Output one or more aspects for simple extras
+                let aspects = [];
+                if (extra.simpleAspects && Array.isArray(extra.simpleAspects) && extra.simpleAspects.length > 0) {
+                    aspects = extra.simpleAspects.filter(a => a && a.trim() !== '');
+                } else if (extra.simpleAspect) {
+                    aspects = [extra.simpleAspect];
+                }
+                if (aspects.length > 0) {
+                    if (aspects.length === 1) {
+                        output += `  Aspect: ${aspects[0]}\n`;
+                    } else {
+                        output += `  Aspects: ${aspects.join(', ')}\n`;
+                    }
+                }
             } else if (!extra.isSimple && extra.features.length > 0) {
                 extra.features.forEach(feature => {
                     // Begin line with feature name
