@@ -1,4 +1,8 @@
+// Character state
 let character = {
+    // Added fields for character and player names
+    characterName: '',
+    playerName: '',
     heritage: '',
     concept: '',
     position: '',
@@ -472,7 +476,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                     </div>
                 </div>
             `;
-            
         case 'Flexible':
             return `
                 <div class="form-group">
@@ -492,7 +495,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'circumstance', this.value)" style="width: 100%; margin-top: 5px;">
                 </div>
             `;
-            
         case 'Focus':
             return `
                 <div class="form-group">
@@ -507,7 +509,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'circumstance', this.value)" style="width: 100%; margin-top: 5px;">
                 </div>
             `;
-            
         case 'Technique':
             return `
                 <div class="form-group">
@@ -516,7 +517,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'ability', this.value)" style="width: 100%;">
                 </div>
             `;
-            
         case 'Training':
             return `
                 <div class="form-group">
@@ -530,7 +530,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'level', this.value)" style="width: 100%;">
                 </div>
             `;
-            
         case 'Talented':
         case 'Unusual':
         case 'Primal Born':
@@ -545,7 +544,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'manualCost', this.value)" style="width: 100%;">
                 </div>
             `;
-            
         default:
             return `
                 <div class="form-group">
@@ -893,33 +891,50 @@ function updatePointsDisplay() {
 function updateCharacterSummary() {
     const summaryDiv = document.getElementById('characterSummary');
     
-    let summary = '<h3>Character Overview</h3>';
+    // Retrieve names from inputs to ensure current values are displayed
+    const charName = document.getElementById('characterName') ? document.getElementById('characterName').value : '';
+    const playerName = document.getElementById('playerName') ? document.getElementById('playerName').value : '';
     
+    let html = '';
+    
+    // Overview section
+    html += '<div class="summary-section">';
+    html += '<h3>Overview</h3>';
+    html += '<ul class="summary-list">';
+    if (charName) html += `<li>Character: ${charName}</li>`;
+    if (playerName) html += `<li>Player: ${playerName}</li>`;
     if (character.heritage) {
         const heritageDisplay = character.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const heritagePointsDisplay = character.heritagePoints !== 0 ? ` (${character.heritagePoints > 0 ? '+' : ''}${character.heritagePoints} pts)` : '';
-        summary += `<p><strong>Heritage:</strong> ${heritageDisplay}${heritagePointsDisplay}</p>`;
+        html += `<li>Heritage: ${heritageDisplay}${heritagePointsDisplay}</li>`;
     }
+    html += '</ul>';
+    html += '</div>';
     
-    // Skills summary
-    summary += '<h4>Skills</h4>';
+    // Skills section
+    html += '<div class="summary-section">';
+    html += '<h4>Skills</h4>';
+    html += '<ul class="summary-list">';
     Object.entries(character.skills).forEach(([skill, value]) => {
-        if (value !== 0) {
-            const skillCost = Math.max(0, value);
-            const costDisplay = skillCost > 0 ? ` (${skillCost} pts)` : '';
-            summary += `<p><strong>${skill.charAt(0).toUpperCase() + skill.slice(1)}:</strong> ${value >= 0 ? '+' : ''}${value}${costDisplay}</p>`;
-        }
+        const skillName = skill.charAt(0).toUpperCase() + skill.slice(1);
+        const skillCost = Math.max(0, value);
+        const costDisplay = skillCost > 0 ? ` (${skillCost} pts)` : '';
+        html += `<li>${skillName}: ${value >= 0 ? '+' : ''}${value}${costDisplay}</li>`;
     });
+    html += '</ul>';
+    html += '</div>';
     
-    // Powers summary
+    // Powers section
     if (character.powers.length > 0) {
-        summary += '<h4>Powers</h4>';
+        html += '<div class="summary-section">';
+        html += '<h4>Powers</h4>';
+        html += '<ul class="summary-list">';
         let hasGMPowers = false;
         character.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             if (['dominion', 'essence', 'song'].includes(power.id)) {
                 const manualCost = gmPowerCosts[power.id];
-                summary += `<p><strong>${powerName}</strong> (${manualCost || 'GM approval required'} pts)</p>`;
+                html += `<li>${powerName} (${manualCost || 'GM approval required'} pts)</li>`;
                 hasGMPowers = true;
             } else {
                 let displayCost = power.cost;
@@ -929,57 +944,73 @@ function updateCharacterSummary() {
                     let actualCost = power.cost;
                     const credits = power.credit.split(',');
                     credits.forEach(credit => {
-                        const [powerName, creditValue] = credit.split(':');
-                        const hasPowerForCredit = character.powers.some(p => p.id === powerName);
+                        const [powerName2, creditValue] = credit.split(':');
+                        const hasPowerForCredit = character.powers.some(p => p.id === powerName2);
                         if (hasPowerForCredit) {
                             actualCost += parseInt(creditValue);
                         }
                     });
                     displayCost = Math.max(0, actualCost);
                 }
-                summary += `<p><strong>${powerName}</strong> (${displayCost} pts)</p>`;
+                html += `<li>${powerName} (${displayCost === 'Free' ? 'Free' : displayCost + ' pts'})</li>`;
             }
         });
-        
-        if (hasGMPowers) {
-            summary += '<p style="color: #EFBF04; font-style: italic;">Note: Ancient powers require GM approval and custom point costs.</p>';
+        html += '</ul>';
+        if (character.powers.some(p => ['dominion', 'essence', 'song'].includes(p.id))) {
+            html += '<p style="color: #EFBF04; font-style: italic;">Note: Ancient powers require GM approval and custom point costs.</p>';
         }
+        html += '</div>';
     }
     
-    // Extras summary
+    // Extras section
     if (character.extras.length > 0) {
-        summary += '<h4>Extras</h4>';
+        html += '<div class="summary-section">';
+        html += '<h4>Extras</h4>';
+        html += '<ul class="summary-list">';
         character.extras.forEach(extra => {
             const extraName = extra.name || 'Unnamed Extra';
             const extraType = extra.type ? ` (${extra.type.charAt(0).toUpperCase() + extra.type.slice(1)})` : '';
             const extraCost = calculateExtraCost(extra);
             const costText = extraCost > 0 ? ` - ${extraCost} pts` : extraCost < 0 ? ` - Credits ${Math.abs(extraCost)} pts` : '';
-            
-            summary += `<p><strong>${extraName}${extraType}</strong>${costText}</p>`;
-            
+            html += `<li>${extraName}${extraType}${costText}`;
+            // Append sub-details
             if (extra.isSimple && extra.simpleAspect) {
-                summary += `<p style="margin-left: 20px; font-style: italic;">Aspect: ${extra.simpleAspect}</p>`;
+                html += `<br><span style="margin-left: 15px; font-style: italic;">Aspect: ${extra.simpleAspect}</span>`;
             } else if (!extra.isSimple && extra.features.length > 0) {
                 const featureList = extra.features.map(f => f.name).join(', ');
-                summary += `<p style="margin-left: 20px; font-style: italic;">Features: ${featureList}</p>`;
+                html += `<br><span style="margin-left: 15px; font-style: italic;">Features: ${featureList}</span>`;
             }
+            html += `</li>`;
         });
+        html += '</ul>';
+        html += '</div>';
     }
     
-    summary += `<h4>Point Allocation</h4>`;
-    summary += `<p><strong>Total Available:</strong> ${character.totalPoints}</p>`;
+    // Point allocation summary
+    html += '<div class="summary-section">';
+    html += '<h4>Point Allocation</h4>';
+    html += '<ul class="summary-list">';
+    html += `<li>Total Available: ${character.totalPoints}</li>`;
     if (character.heritagePoints !== 0) {
-        summary += `<p><strong>Heritage Adjustment:</strong> ${character.heritagePoints > 0 ? '+' : ''}${character.heritagePoints}</p>`;
+        html += `<li>Heritage Adjustment: ${character.heritagePoints > 0 ? '+' : ''}${character.heritagePoints}</li>`;
     }
-    summary += `<p><strong>Used:</strong> ${character.usedPoints}</p>`;
-    summary += `<p><strong>Good Stuff Rating:</strong> ${character.totalPoints - character.usedPoints}</p>`;
+    html += `<li>Used: ${character.usedPoints}</li>`;
+    html += `<li>Good Stuff Rating: ${character.totalPoints - character.usedPoints}</li>`;
+    html += '</ul>';
+    html += '</div>';
     
-    summaryDiv.innerHTML = summary;
+    summaryDiv.innerHTML = html;
 }
 
 // Save/Load functionality
 function saveCharacter() {
     try {
+        // Persist current names into character state
+        const charNameEl = document.getElementById('characterName');
+        const playerNameEl = document.getElementById('playerName');
+        if (charNameEl) character.characterName = charNameEl.value;
+        if (playerNameEl) character.playerName = playerNameEl.value;
+        
         const saveData = {
             ...character,
             concept: document.getElementById('concept').value,
@@ -995,17 +1026,21 @@ function saveCharacter() {
             extraIdCounter: extraIdCounter,
             featureInstanceCounter: featureInstanceCounter
         };
-
+        
+        // Include names directly in saveData for easy retrieval
+        saveData.characterName = character.characterName;
+        saveData.playerName = character.playerName;
+        
         const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
         skills.forEach(skill => {
             saveData.formValues.skills[skill] = document.getElementById(skill).value;
         });
-
+        
         const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
         powerElements.forEach(element => {
             saveData.formValues.powers[element.id] = element.checked;
         });
-
+        
         localStorage.setItem('amberCharacter', JSON.stringify(saveData));
         document.getElementById('saveStatus').textContent = 'Saved ✓';
         setTimeout(() => {
@@ -1021,14 +1056,24 @@ function loadCharacter() {
     try {
         const saved = localStorage.getItem('amberCharacter');
         if (!saved) return;
-
+        
         const saveData = JSON.parse(saved);
+        
+        // Restore names
+        if (saveData.characterName && document.getElementById('characterName')) {
+            document.getElementById('characterName').value = saveData.characterName;
+            character.characterName = saveData.characterName;
+        }
+        if (saveData.playerName && document.getElementById('playerName')) {
+            document.getElementById('playerName').value = saveData.playerName;
+            character.playerName = saveData.playerName;
+        }
         
         if (saveData.concept) document.getElementById('concept').value = saveData.concept;
         if (saveData.position) document.getElementById('position').value = saveData.position;
         if (saveData.trouble) document.getElementById('trouble').value = saveData.trouble;
         if (saveData.secret) document.getElementById('secret').value = saveData.secret;
-
+        
         if (saveData.gmPowerCosts) {
             gmPowerCosts = saveData.gmPowerCosts;
             // Restore GM power cost inputs
@@ -1037,12 +1082,12 @@ function loadCharacter() {
                 if (input) input.value = cost;
             });
         }
-
+        
         if (saveData.formValues && saveData.formValues.heritage) {
             document.getElementById('heritage').value = saveData.formValues.heritage;
             updateHeritage();
         }
-
+        
         if (saveData.formValues && saveData.formValues.skills) {
             Object.entries(saveData.formValues.skills).forEach(([skill, value]) => {
                 if (document.getElementById(skill)) {
@@ -1051,7 +1096,7 @@ function loadCharacter() {
             });
             updateSkills();
         }
-
+        
         if (saveData.formValues && saveData.formValues.powers) {
             Object.entries(saveData.formValues.powers).forEach(([powerId, checked]) => {
                 const element = document.getElementById(powerId);
@@ -1061,7 +1106,7 @@ function loadCharacter() {
             });
             updatePowers();
         }
-
+        
         if (saveData.extras) {
             character.extras = saveData.extras;
             extraIdCounter = saveData.extraIdCounter || 0;
@@ -1073,7 +1118,7 @@ function loadCharacter() {
                 renderExtra(extra);
             });
         }
-
+        
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
         setTimeout(() => {
             document.getElementById('saveStatus').textContent = '';
@@ -1092,6 +1137,10 @@ function resetCharacter() {
 }
 
 function exportCharacter() {
+    // Ensure names are up to date in character state
+    if (document.getElementById('characterName')) character.characterName = document.getElementById('characterName').value;
+    if (document.getElementById('playerName')) character.playerName = document.getElementById('playerName').value;
+    
     const exportData = {
         ...character,
         concept: document.getElementById('concept').value,
@@ -1101,6 +1150,8 @@ function exportCharacter() {
     };
     
     let output = '=== ANCIENT SECRETS CHARACTER SHEET ===\n\n';
+    output += `Character Name: ${exportData.characterName || ''}\n`;
+    output += `Player Name: ${exportData.playerName || ''}\n`;
     output += `Heritage: ${exportData.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
     if (exportData.heritagePoints !== 0) {
         output += ` (${exportData.heritagePoints > 0 ? '+' : ''}${exportData.heritagePoints} pts)`;
@@ -1133,15 +1184,15 @@ function exportCharacter() {
                     let actualCost = power.cost;
                     const credits = power.credit.split(',');
                     credits.forEach(credit => {
-                        const [powerName, creditValue] = credit.split(':');
-                        const hasPowerForCredit = exportData.powers.some(p => p.id === powerName);
+                        const [powerName2, creditValue] = credit.split(':');
+                        const hasPowerForCredit = exportData.powers.some(p => p.id === powerName2);
                         if (hasPowerForCredit) {
                             actualCost += parseInt(creditValue);
                         }
                     });
                     displayCost = Math.max(0, actualCost);
                 }
-                output += `${powerName} (${displayCost} pts)\n`;
+                output += `${powerName} (${displayCost === 'Free' ? 'Free' : displayCost + ' pts'})\n`;
             }
         });
     }
@@ -1183,12 +1234,13 @@ function exportCharacter() {
     output += `Used: ${exportData.usedPoints}\n`;
     output += `Good Stuff Rating: ${exportData.totalPoints - exportData.usedPoints}\n`;
     
-    // Create downloadable file
+    // Create downloadable file with dynamic naming
     const blob = new Blob([output], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ancient-secrets-character.txt';
+    const fileName = `Ancient Secrets - ${exportData.characterName || 'Character'} (${exportData.playerName || 'Player'}).txt`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1238,8 +1290,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCharacter();
     updatePointsDisplay();
     
-    // Add event listeners for text inputs
-    const textInputs = ['concept', 'position', 'trouble', 'secret'];
+    // Add event listeners for text inputs including new name fields
+    const textInputs = ['characterName', 'playerName', 'concept', 'position', 'trouble', 'secret'];
     textInputs.forEach(inputId => {
         const element = document.getElementById(inputId);
         if (element) {

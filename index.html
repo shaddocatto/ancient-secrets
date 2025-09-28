@@ -18,6 +18,19 @@
             <div class="save-status" id="saveStatus">Auto-saving...</div>
         </div>
 
+        <!-- Character and Player Info -->
+        <div class="section">
+            <h2>Character Information</h2>
+            <div class="form-group">
+                <label for="characterName">Character Name:</label>
+                <input type="text" id="characterName" placeholder="Enter character name">
+            </div>
+            <div class="form-group">
+                <label for="playerName">Player Name:</label>
+                <input type="text" id="playerName" placeholder="Enter player name">
+            </div>
+        </div>
+
         <!-- Heritage Selection -->
         <div class="section">
             <h2>Heritage</h2>
@@ -348,7 +361,7 @@
         <!-- Extras -->
         <div class="section">
             <h2>Extras (Optional)</h2>
-            <p style="margin-bottom: 20px; color: #cccccc;">GM approval required. Choose Simple (name + aspect + invokes) or Custom (detailed options below). <span style="color: #EFBF04;">UPDATED - All features from rulebook included!</span></p>
+            <p style="margin-bottom: 20px; color: #cccccc;">GM approval required. Choose Simple (name + aspect + invokes) or Custom (detailed options below).</p>
 
             <div id="extrasContainer">
                 <!-- Extras will be dynamically added here -->
@@ -357,7 +370,6 @@
             <div class="form-group">
                 <button type="button" class="export-btn" onclick="addExtra()" style="font-size: 0.9em; padding: 10px 20px;">Add New Extra</button>
             </div>
-            
         </div>
 
         <!-- Character Summary -->

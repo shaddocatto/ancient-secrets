@@ -1,390 +1,330 @@
-* {
+/*
+ * Base layout and typography
+ *
+ * This stylesheet defines a simple dark‑themed UI for the Ancient Secrets
+ * character builder. The goal of these styles is to make the interface
+ * readable at a glance by clearly separating sections, reducing the overuse
+ * of bold text, and accenting important values such as point costs and
+ * headings with a contrasting color. Users should immediately understand
+ * what each control does and how it relates to their character without
+ * needing to sift through dense walls of text.
+ */
+
+html, body {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Georgia', serif;
-    background: linear-gradient(135deg, #1a0033 0%, #2d0066 50%, #1a0033 100%);
-    color: #ffffe3;
-    min-height: 100vh;
-    padding: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #121212;
+    color: #f5f5f5;
+    line-height: 1.4;
 }
 
 .container {
-    max-width: 1200px;
+    width: 90%;
+    max-width: 1000px;
     margin: 0 auto;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 15px;
-    padding: 30px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    border: 2px solid #6C3BAA;
+    padding: 20px;
 }
 
 h1 {
-    text-align: center;
-    font-size: 2.5em;
-    margin-bottom: 10px;
-    background: linear-gradient(45deg, #EFBF04, #ffffe3);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 0 20px rgba(239, 191, 4, 0.3);
+    font-size: 2em;
+    margin-bottom: 0.2em;
+    color: #EFBF04;
 }
 
 .subtitle {
-    text-align: center;
-    color: #6C3BAA;
-    margin-bottom: 30px;
-    font-size: 1.2em;
-}
-
-.points-display {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(108, 59, 170, 0.9);
-    padding: 15px 25px;
-    border-radius: 10px;
-    border: 2px solid #EFBF04;
-    z-index: 1000;
-    min-width: 200px;
-}
-
-.points-display h3 {
-    color: #EFBF04;
-    margin-bottom: 10px;
-}
-
-.points-remaining {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #ffffe3;
-}
-
-.points-warning {
-    color: #ff6b6b;
-    font-weight: bold;
-}
-
-.section {
-    background: rgba(46, 111, 64, 0.2);
-    margin: 20px 0;
-    padding: 25px;
-    border-radius: 10px;
-    border-left: 4px solid #2E6F40;
-}
-
-.section h2 {
-    color: #EFBF04;
-    margin-bottom: 20px;
-    font-size: 1.8em;
-    border-bottom: 2px solid #6C3BAA;
-    padding-bottom: 10px;
-}
-
-.form-group {
-    margin: 15px 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.form-row {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    margin: 10px 0;
-}
-
-label {
-    font-weight: bold;
-    color: #ffffe3;
-    margin-bottom: 5px;
-    min-width: 120px;
-}
-
-select, input[type="text"], input[type="number"], textarea {
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid #6C3BAA;
-    border-radius: 5px;
-    padding: 10px;
-    color: #ffffe3;
-    font-family: inherit;
-    transition: all 0.3s ease;
-}
-
-select:focus, input:focus, textarea:focus {
-    outline: none;
-    border-color: #EFBF04;
-    box-shadow: 0 0 10px rgba(239, 191, 4, 0.3);
-}
-
-select option {
-    background: #1a0033;
-    color: #ffffe3;
-}
-
-.skill-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-}
-
-.skill-item {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #6C3BAA;
-}
-
-.skill-item label {
-    display: block;
-    margin-bottom: 5px;
     font-size: 0.9em;
-}
-
-.skill-description {
-    font-size: 0.8em;
-    color: #cccccc;
-    margin-bottom: 8px;
+    color: #bbbbbb;
+    margin-bottom: 25px;
     font-style: italic;
 }
 
+/* Section blocks */
+.section {
+    margin-bottom: 30px;
+    background-color: #1e1e1e;
+    padding: 15px;
+    border-radius: 6px;
+}
+.section h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #EFBF04;
+    font-size: 1.4em;
+}
+
+/* Form groups */
+.form-group {
+    margin-bottom: 15px;
+}
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #EFBF04;
+}
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #282828;
+    color: #f5f5f5;
+    font-size: 0.9em;
+    box-sizing: border-box;
+}
+.form-group textarea {
+    resize: vertical;
+}
+
+/* Points display */
+.points-display {
+    background-color: #1e1e1e;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+.points-display h3 {
+    margin: 0;
+    color: #EFBF04;
+    flex: 1 1 auto;
+}
+.points-remaining {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #EFBF04;
+    min-width: 50px;
+    text-align: center;
+}
+.points-warning {
+    color: #ff5555;
+    font-weight: bold;
+}
+.success {
+    color: #55aa55;
+    font-weight: bold;
+}
+.save-status {
+    font-size: 0.8em;
+    color: #888;
+    flex-basis: 100%;
+    margin-top: 5px;
+}
+
+/* Skills */
+.skill-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.skill-item {
+    flex: 1 1 calc(50% - 15px);
+    background-color: #2e2e2e;
+    padding: 10px;
+    border-radius: 4px;
+}
+.skill-item label {
+    font-weight: bold;
+    color: #EFBF04;
+    display: block;
+    margin-bottom: 3px;
+}
+.skill-description {
+    font-size: 0.75em;
+    color: #aaaaaa;
+    margin-bottom: 5px;
+}
 .skill-cost {
     font-size: 0.8em;
     color: #EFBF04;
     margin-top: 5px;
 }
 
+/* Powers */
 .powers-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
 }
-
 .power-category {
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 10px;
-    padding: 20px;
-    border: 2px solid #6C3BAA;
-}
-
-.power-category h3 {
-    color: #EFBF04;
-    margin-bottom: 15px;
-    text-align: center;
-    font-size: 1.3em;
-}
-
-.power-item {
-    margin: 10px 0;
+    flex: 1 1 calc(50% - 15px);
+    background-color: #2e2e2e;
     padding: 10px;
-    background: rgba(108, 59, 170, 0.1);
-    border-radius: 5px;
-    border-left: 3px solid #6C3BAA;
+    border-radius: 4px;
 }
-
+.power-category h3 {
+    margin: 0 0 8px 0;
+    color: #EFBF04;
+    font-size: 1.2em;
+}
+.power-item {
+    margin-bottom: 12px;
+}
 .power-item label {
-    cursor: pointer;
+    font-weight: bold;
     display: flex;
     align-items: center;
-    gap: 10px;
+    cursor: pointer;
+    color: #f5f5f5;
 }
-
-.power-cost {
-    background: #EFBF04;
-    color: #1a0033;
-    padding: 2px 8px;
-    border-radius: 12px;
+.power-item .power-cost {
+    background-color: #444;
+    color: #EFBF04;
+    padding: 2px 6px;
+    border-radius: 3px;
     font-size: 0.8em;
-    font-weight: bold;
-    min-width: 40px;
+    margin-right: 6px;
+    min-width: 28px;
     text-align: center;
 }
-
-.power-cost.free {
-    background: #4ecdc4;
-}
-
-.power-cost.discounted {
-    background: #ff9f43;
-}
-
-.power-cost.gm {
-    background: #ff6b6b;
-    color: white;
-}
-
 .power-description {
-    font-size: 0.85em;
-    color: #cccccc;
-    margin-top: 5px;
-    padding-left: 25px;
+    font-size: 0.75em;
+    color: #888;
+    margin-left: 22px;
+    margin-top: 3px;
 }
-
-.disabled {
+.power-item.disabled {
     opacity: 0.5;
     pointer-events: none;
 }
 
-.error {
-    color: #ff6b6b;
-    font-size: 0.9em;
-    margin-top: 5px;
-}
-
-.success {
-    color: #4ecdc4;
-    font-size: 0.9em;
-    margin-top: 5px;
-}
-
-.heritage-info {
-    background: rgba(239, 191, 4, 0.1);
-    padding: 10px;
-    border-radius: 5px;
-    margin-top: 10px;
-    font-size: 0.9em;
-}
-
-.export-section {
-    text-align: center;
-    margin-top: 30px;
-}
-
-.export-btn {
-    background: linear-gradient(45deg, #6C3BAA, #EFBF04);
-    color: #1a0033;
-    border: none;
-    padding: 15px 30px;
-    border-radius: 25px;
-    font-size: 1.1em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.export-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(239, 191, 4, 0.4);
-}
-
-.save-status {
-    font-size: 0.8em;
-    color: #4ecdc4;
-    margin-top: 5px;
-}
-
-.reset-btn {
-    background: #ff6b6b;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 15px;
-    font-size: 0.9em;
-    cursor: pointer;
-    margin-left: 15px;
-    transition: all 0.3s ease;
-}
-
-.reset-btn:hover {
-    background: #ff5252;
-    transform: translateY(-1px);
-}
-
-.feature-instance {
-    background: rgba(108, 59, 170, 0.05);
-    border: 1px solid rgba(108, 59, 170, 0.3);
-    border-radius: 5px;
-    padding: 10px;
-    margin: 5px 0;
-}
-
-.feature-instance-header {
+/* Extras */
+.extra-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
-
+.feature-instances {
+    background-color: #1e1e1e;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+.feature-instance {
+    background-color: #2e2e2e;
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+.feature-instance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
 .feature-instance-title {
     font-weight: bold;
     color: #EFBF04;
-    flex-grow: 1;
 }
-
 .remove-instance-btn {
-    background: #ff6b6b;
-    color: white;
+    background-color: transparent;
     border: none;
-    padding: 2px 8px;
-    border-radius: 3px;
-    font-size: 0.7em;
+    color: #ff7777;
     cursor: pointer;
+    font-size: 1.2em;
 }
-
-.remove-instance-btn:hover {
-    background: #ff5252;
-}
-
 .add-instance-btn {
-    background: #4ecdc4;
-    color: #1a0033;
+    background-color: #3a3a3a;
+    color: #f5f5f5;
     border: none;
     padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 0.8em;
+    border-radius: 4px;
     cursor: pointer;
-    margin-top: 5px;
+    font-size: 0.8em;
 }
-
 .add-instance-btn:hover {
-    background: #45b7aa;
+    background-color: #515151;
 }
 
-.skill-selection {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+/* Buttons */
+button {
+    background-color: #3a3a3a;
+    color: #f5f5f5;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+button:hover {
+    background-color: #515151;
+}
+.export-btn {
+    background-color: #007acc;
+    color: white;
+}
+.export-btn:hover {
+    background-color: #005ea0;
+}
+.reset-btn {
+    background-color: #cc4444;
+    color: white;
+}
+.reset-btn:hover {
+    background-color: #a83535;
+}
+
+/* Heritage info box */
+.heritage-info {
+    background-color: #2e2e2e;
+    padding: 8px;
+    border-left: 4px solid #EFBF04;
+    color: #cccccc;
+    font-size: 0.85em;
     margin-top: 5px;
+    border-radius: 4px;
 }
 
-.skill-selection select,
-.skill-selection input {
-    font-size: 0.8em;
-    padding: 5px;
+/* Character summary */
+#characterSummary {
+    margin-top: 30px;
+}
+.summary-section {
+    background-color: #1e1e1e;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+.summary-section h3,
+.summary-section h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #EFBF04;
+}
+.summary-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.summary-list li {
+    margin-bottom: 5px;
+    font-size: 0.9em;
 }
 
-.gm-cost-input {
-    width: 60px;
-    margin-left: 10px;
-    font-size: 0.8em;
-    padding: 2px 6px;
+/* Misc */
+input[type="radio"] {
+    margin-right: 5px;
+}
+input[type="checkbox"] {
+    margin-right: 5px;
 }
 
-@media (max-width: 768px) {
-    .points-display {
-        position: relative;
-        top: 0;
-        right: 0;
-        margin-bottom: 20px;
-    }
-
-    .form-row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .skill-container {
-        grid-template-columns: 1fr;
-    }
-
-    .powers-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .skill-selection {
-        grid-template-columns: 1fr;
-    }
+/* Scrollbar styling for long pages */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #121212;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 4px;
 }
