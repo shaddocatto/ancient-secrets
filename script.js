@@ -317,8 +317,11 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                     <label>Improvement (+1 per point):</label>
                     <input type="number" min="1" max="12" 
                            value="${instance.improvement || 1}"
-                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'improvement', parseInt(this.value))"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'improvement', parseInt(this.value)); updateExtraCostDisplay('${extraId}')"
                            style="width: 100px;">
+                    <div style="color: #EFBF04; font-size: 0.8em; margin-top: 5px;">
+                        Cost: ${(instance.cost || 0.5) + (instance.improvement || 1)} points (Base: ${instance.cost || 0.5} + Improvement: ${instance.improvement || 1})
+                    </div>
                 </div>
             `;
             break;
@@ -587,6 +590,16 @@ function removeFeatureInstance(extraId, featureName, instanceIndex) {
     }
 }
 
+function updateExtraCostDisplay(extraId) {
+    const extra = character.extras.find(e => e.id === extraId);
+    if (extra) {
+        const costDiv = document.querySelector(`#${extraId} .skill-cost`);
+        if (costDiv) {
+            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
+        }
+    }
+}
+
 function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, value) {
     const extra = character.extras.find(e => e.id === extraId);
     const instances = extra.features.filter(f => f.name === featureName);
@@ -758,8 +771,18 @@ function calculateExtraCost(extra) {
         // Simple extras: just 1 point for basic functionality
         return 1;
     } else {
-        // Custom extras: sum of all features
-        return extra.features.reduce((total, feature) => total + feature.cost, 0);
+        // Custom extras: sum of all features with special handling for Training
+        return extra.features.reduce((total, feature) => {
+            if (feature.name === 'Training') {
+                // Training cost = base cost (0.5) + improvement value
+                const baseCost = feature.cost || 0.5;
+                const improvementCost = feature.improvement || 1;
+                return total + baseCost + improvementCost;
+            } else {
+                // Other features just use their base cost
+                return total + feature.cost;
+            }
+        }, 0);
     }
 }
 
@@ -996,7 +1019,20 @@ function updatePointsDisplay() {
         document.getElementById('pointsRemaining').className = 'points-remaining';
     }
     
-    // 🔧 DEBUG: Log points breakdown to console
+    // 🔧 DEBUG: Log points breakdown to console with extras details
+    const extrasDebug = character.extras.map(extra => ({
+        name: extra.name || 'Unnamed',
+        type: extra.type,
+        isSimple: extra.isSimple,
+        cost: calculateExtraCost(extra),
+        features: extra.features.map(f => ({
+            name: f.name,
+            baseCost: f.cost,
+            improvement: f.improvement,
+            calculatedCost: f.name === 'Training' ? (f.cost || 0.5) + (f.improvement || 1) : f.cost
+        }))
+    }));
+    
     console.log('Points breakdown:', {
         skills: Object.values(character.skills).reduce((total, value) => total + Math.max(0, value), 0),
         powers: character.powers.reduce((total, power) => {
@@ -1014,6 +1050,7 @@ function updatePointsDisplay() {
             return total + Math.max(0, powerCost);
         }, 0),
         extras: character.extras.reduce((total, extra) => total + calculateExtraCost(extra), 0),
+        extrasDetail: extrasDebug,
         total: character.usedPoints,
         remaining: remaining
     });
