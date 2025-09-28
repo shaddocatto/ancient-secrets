@@ -23,6 +23,7 @@ let character = {
     usedPoints: 0
 };
 
+// Initialize counters
 let extraIdCounter = 0;
 let featureInstanceCounter = 0;
 
@@ -1193,119 +1194,88 @@ function updateCharacterSummary() {
 let saveTimeout = null;
 
 function saveCharacter() {
-    // Debounce saves to prevent race conditions
-    if (saveTimeout) {
-        clearTimeout(saveTimeout);
-    }
-    
-    saveTimeout = setTimeout(() => {
-        try {
-            console.log('Saving character data...');
-            
-            // Ensure all DOM elements exist before reading values
-            const getValue = (id) => {
-                const element = document.getElementById(id);
-                return element ? element.value : '';
-            };
-            
-            // Save form values
-            const saveData = {
-                ...character,
-                characterName: getValue('characterName'),
-                playerName: getValue('playerName'),
-                concept: getValue('concept'),
-                position: getValue('position'),
-                trouble: getValue('trouble'),
-                goal: getValue('goal'),
-                secret: getValue('secret'),
-                formValues: {
-                    heritage: getValue('heritage'),
-                    skills: {},
-                    powers: {}
-                },
-                extraIdCounter: extraIdCounter,
-                featureInstanceCounter: featureInstanceCounter,
-                saveTimestamp: Date.now() // Add timestamp to track saves
-            };
-
-            // Save skill values
-            const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
-            skills.forEach(skill => {
-                saveData.formValues.skills[skill] = getValue(skill);
-            });
-
-            // Save power selections
-            const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
-            powerElements.forEach(element => {
-                saveData.formValues.powers[element.id] = element.checked;
-            });
-
-            console.log(`Saving ${character.extras.length} extras...`);
-            localStorage.setItem('amberCharacter', JSON.stringify(saveData));
-            
-            const statusElement = document.getElementById('saveStatus');
-            if (statusElement) {
-                statusElement.textContent = 'Saved ✓';
-                setTimeout(() => {
-                    if (statusElement) {
-                        statusElement.textContent = '';
-                    }
-                }, 2000);
-            }
-            
-            console.log('Save complete');
-        } catch (error) {
-            console.error('Save failed:', error);
-            const statusElement = document.getElementById('saveStatus');
-            if (statusElement) {
-                statusElement.textContent = 'Save failed!';
-            }
+    try {
+        // Ensure extras array exists
+        if (!character.extras) {
+            character.extras = [];
         }
-    }, 100); // Small delay to debounce rapid saves
+        
+        // Ensure counters exist
+        if (typeof extraIdCounter === 'undefined') {
+            extraIdCounter = 0;
+        }
+        if (typeof featureInstanceCounter === 'undefined') {
+            featureInstanceCounter = 0;
+        }
+        
+        // Save form values
+        const saveData = {
+            ...character,
+            concept: document.getElementById('concept').value,
+            position: document.getElementById('position').value,
+            trouble: document.getElementById('trouble').value,
+            goal: document.getElementById('goal').value,
+            secret: document.getElementById('secret').value,
+            formValues: {
+                heritage: document.getElementById('heritage').value,
+                skills: {},
+                powers: {}
+            },
+            extraIdCounter: extraIdCounter,
+            featureInstanceCounter: featureInstanceCounter
+        };
+
+        // Save skill values
+        const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
+        skills.forEach(skill => {
+            const element = document.getElementById(skill);
+            if (element) {
+                saveData.formValues.skills[skill] = element.value;
+            }
+        });
+
+        // Save power selections
+        const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
+        powerElements.forEach(element => {
+            saveData.formValues.powers[element.id] = element.checked;
+        });
+
+        localStorage.setItem('amberCharacter', JSON.stringify(saveData));
+        document.getElementById('saveStatus').textContent = 'Saved ✓';
+        setTimeout(() => {
+            document.getElementById('saveStatus').textContent = '';
+        }, 2000);
+    } catch (error) {
+        console.error('Save failed:', error);
+        document.getElementById('saveStatus').textContent = 'Save failed!';
+    }
 }
 
 function loadCharacter() {
     try {
         const saved = localStorage.getItem('amberCharacter');
-        if (!saved) {
-            console.log('No saved character data found');
-            return;
-        }
+        if (!saved) return;
 
-        console.log('Loading character data...');
         const saveData = JSON.parse(saved);
         
-        // Restore form values - check if elements exist first
-        const restoreField = (id, value) => {
-            const element = document.getElementById(id);
-            if (element && value) {
-                element.value = value;
-            }
-        };
-        
-        restoreField('characterName', saveData.characterName);
-        restoreField('playerName', saveData.playerName);
-        restoreField('concept', saveData.concept);
-        restoreField('position', saveData.position);
-        restoreField('trouble', saveData.trouble);
-        restoreField('goal', saveData.goal);
-        restoreField('secret', saveData.secret);
+        // Restore form values
+        if (saveData.concept) document.getElementById('concept').value = saveData.concept;
+        if (saveData.position) document.getElementById('position').value = saveData.position;
+        if (saveData.trouble) document.getElementById('trouble').value = saveData.trouble;
+        if (saveData.goal) document.getElementById('goal').value = saveData.goal;
+        if (saveData.secret) document.getElementById('secret').value = saveData.secret;
 
         // Restore heritage
         if (saveData.formValues && saveData.formValues.heritage) {
-            const heritageElement = document.getElementById('heritage');
-            if (heritageElement) {
-                heritageElement.value = saveData.formValues.heritage;
-                updateHeritage();
-            }
+            document.getElementById('heritage').value = saveData.formValues.heritage;
+            updateHeritage();
         }
 
         // Restore skills
         if (saveData.formValues && saveData.formValues.skills) {
             Object.entries(saveData.formValues.skills).forEach(([skill, value]) => {
-                const skillElement = document.getElementById(skill);
-                if (skillElement) {
-                    skillElement.value = value;
+                if (document.getElementById(skill)) {
+                    document.getElementById(skill).value = value;
                 }
             });
             updateSkills();
@@ -1322,10 +1292,11 @@ function loadCharacter() {
             updatePowers();
         }
 
-        // Restore extras with better error handling
+        // Restore extras with defensive coding
         if (saveData.extras && Array.isArray(saveData.extras)) {
-            console.log(`Loading ${saveData.extras.length} extras...`);
             character.extras = saveData.extras;
+            
+            // Restore counters with fallbacks
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
@@ -1333,44 +1304,35 @@ function loadCharacter() {
             const extrasContainer = document.getElementById('extrasContainer');
             if (extrasContainer) {
                 extrasContainer.innerHTML = '';
-                
-                // Re-render all extras with error handling
-                character.extras.forEach((extra, index) => {
-                    try {
-                        console.log(`Rendering extra ${index + 1}: ${extra.name || 'Unnamed'}`);
-                        renderExtra(extra);
-                    } catch (error) {
-                        console.error(`Failed to render extra ${index + 1}:`, error);
-                    }
-                });
-                
-                console.log(`Successfully loaded ${character.extras.length} extras`);
-            } else {
-                console.error('extrasContainer element not found!');
             }
+            
+            // Re-render all extras
+            character.extras.forEach(extra => {
+                // Ensure extra has required properties
+                if (!extra.id) extra.id = 'extra_' + (++extraIdCounter);
+                if (extra.isSimple === undefined) extra.isSimple = true;
+                if (!extra.features) extra.features = [];
+                if (extra.isEditing === undefined) extra.isEditing = false;
+                
+                renderExtra(extra);
+            });
         } else {
-            console.log('No extras data to restore');
+            // Initialize empty extras if none found
+            character.extras = [];
+            extraIdCounter = 0;
+            featureInstanceCounter = 0;
         }
-
-        // Update display after everything is loaded
-        updatePointsDisplay();
 
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
         setTimeout(() => {
-            const statusElement = document.getElementById('saveStatus');
-            if (statusElement) {
-                statusElement.textContent = '';
-            }
+            document.getElementById('saveStatus').textContent = '';
         }, 3000);
-        
-        console.log('Character load complete');
     } catch (error) {
         console.error('Load failed:', error);
-        // Don't show error to user unless it's critical
-        if (error.message.includes('JSON')) {
-            document.getElementById('saveStatus').textContent = 'Save file corrupted - starting fresh';
-            localStorage.removeItem('amberCharacter');
-        }
+        // Initialize empty state on load failure
+        character.extras = [];
+        extraIdCounter = 0;
+        featureInstanceCounter = 0;
     }
 }
 
@@ -1573,6 +1535,119 @@ function exportCharacter() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+// Test function for Extras localStorage functionality
+function testExtrasLocalStorage() {
+    console.log('=== Testing Extras localStorage functionality ===');
+    
+    // Save current state
+    const originalExtras = [...character.extras];
+    const originalCounters = {
+        extraId: extraIdCounter,
+        featureInstance: featureInstanceCounter
+    };
+    
+    // Create test extra
+    const testExtra = {
+        id: 'test_extra_123',
+        name: 'Test Extra',
+        type: 'item',
+        isSimple: false,
+        simpleAspect: '',
+        features: [
+            {
+                name: 'Focus',
+                cost: 1,
+                skill: 'strength',
+                circumstance: 'in combat',
+                instanceIndex: 999
+            }
+        ],
+        isEditing: false
+    };
+    
+    character.extras.push(testExtra);
+    extraIdCounter = 100;
+    featureInstanceCounter = 200;
+    
+    console.log('Added test extra:', testExtra);
+    
+    // Save to localStorage
+    saveCharacter();
+    console.log('Saved character with test extra');
+    
+    // Clear current extras
+    character.extras = [];
+    extraIdCounter = 0;
+    featureInstanceCounter = 0;
+    console.log('Cleared extras from memory');
+    
+    // Load from localStorage
+    loadCharacter();
+    console.log('Loaded character from localStorage');
+    
+    // Verify the test extra was loaded correctly
+    const loadedTestExtra = character.extras.find(e => e.id === 'test_extra_123');
+    
+    if (loadedTestExtra) {
+        console.log('✓ Test extra found after reload');
+        console.log('Loaded extra:', loadedTestExtra);
+        
+        // Check properties
+        if (loadedTestExtra.name === 'Test Extra') {
+            console.log('✓ Extra name preserved');
+        } else {
+            console.log('✗ Extra name not preserved:', loadedTestExtra.name);
+        }
+        
+        if (loadedTestExtra.type === 'item') {
+            console.log('✓ Extra type preserved');
+        } else {
+            console.log('✗ Extra type not preserved:', loadedTestExtra.type);
+        }
+        
+        if (loadedTestExtra.features && loadedTestExtra.features.length > 0) {
+            console.log('✓ Features preserved');
+            const feature = loadedTestExtra.features[0];
+            if (feature.name === 'Focus' && feature.skill === 'strength') {
+                console.log('✓ Feature data preserved');
+            } else {
+                console.log('✗ Feature data not preserved:', feature);
+            }
+        } else {
+            console.log('✗ Features not preserved');
+        }
+        
+        if (extraIdCounter === 100) {
+            console.log('✓ Extra ID counter preserved');
+        } else {
+            console.log('✗ Extra ID counter not preserved:', extraIdCounter);
+        }
+        
+        if (featureInstanceCounter === 200) {
+            console.log('✓ Feature instance counter preserved');
+        } else {
+            console.log('✗ Feature instance counter not preserved:', featureInstanceCounter);
+        }
+        
+    } else {
+        console.log('✗ Test extra not found after reload!');
+        console.log('Current extras:', character.extras);
+    }
+    
+    // Restore original state
+    character.extras = originalExtras;
+    extraIdCounter = originalCounters.extraId;
+    featureInstanceCounter = originalCounters.featureInstance;
+    saveCharacter();
+    
+    console.log('=== Test completed, original state restored ===');
+}
+
+// Add to window for manual testing
+if (typeof window !== 'undefined') {
+    window.testExtrasLocalStorage = testExtrasLocalStorage;
 }
 
 // Initialize and set up auto-save

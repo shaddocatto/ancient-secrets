@@ -229,24 +229,24 @@
                     <h3>Powers of Art</h3>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="trump-artist" onchange="updatePowers()" data-cost="2" data-prereq="">
-                            <span class="power-cost" id="trump-artist-cost">2</span>
+                            <input type="checkbox" id="trump-artist" onchange="updatePowers()" data-cost="4" data-prereq="">
+                            <span class="power-cost" id="trump-artist-cost">4</span>
                             Trump Artist
                         </label>
                         <div class="power-description">Requires: Chaos (-1) Psyche. Create Trump, Identify Trump, Imbue Trump Artifacts, Trump Defense</div>
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="advanced-trump" onchange="updatePowers()" data-cost="4" data-prereq="trump-artist" data-credit="trump-artist:-2">
-                            <span class="power-cost" id="advanced-trump-cost">4</span>
+                            <input type="checkbox" id="advanced-trump" onchange="updatePowers()" data-cost="6" data-prereq="trump-artist" data-credit="trump-artist:-2">
+                            <span class="power-cost" id="advanced-trump-cost">6</span>
                             Advanced Trump Artist
                         </label>
                         <div class="power-description">Requires: Trump Artist; Amber (0) Psyche. Trump Gate, Trump Jamming, Trump Memory, Trump Trap</div>
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="wrighting" onchange="updatePowers()" data-cost="3" data-credit="trump-artist:-1,advanced-trump:-3">
-                            <span class="power-cost" id="wrighting-cost">3</span>
+                            <input type="checkbox" id="wrighting" onchange="updatePowers()" data-cost="4" data-credit="trump-artist:-2,advanced-trump:-3">
+                            <span class="power-cost" id="wrighting-cost">4</span>
                             Wrighting
                         </label>
                         <div class="power-description">Requires: Amber (0) Psyche. Create Icon, Impromptu Icon, Defense, Creating Icon-Powered Artifacts</div>
@@ -295,7 +295,7 @@
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="keeper-void" onchange="updatePowers()" data-cost="4" data-credit="undershadow-manipulator:-1,advanced-undershadow:-3">
+                            <input type="checkbox" id="keeper-void" onchange="updatePowers()" data-cost="4" data-credit="undershadow-manipulator:-1,advanced-undershadow:-2">
                             <span class="power-cost" id="keeper-void-cost">4</span>
                             Keeper of the Void
                         </label>
@@ -454,7 +454,7 @@
         <!-- Extras -->
         <div class="section">
             <h2>Extras (Optional)</h2>
-            <p style="margin-bottom: 20px; color: #cccccc;">GM approval required. Choose Simple (name + aspect + invokes) or Custom (detailed options below). <span style="color: #EFBF04;">UPDATED - Multi-instance support added!</span></p>
+            <p style="margin-bottom: 20px; color: #cccccc;">GM approval required. Choose Simple (name + aspect + invokes) or Custom (detailed options below). </p>
 
             <div id="extrasContainer">
                 <!-- Extras will be dynamically added here -->
