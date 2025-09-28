@@ -468,6 +468,8 @@ function addSkillModification(extraId, featureName, instanceIndex) {
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
+    // 🔧 FIX: Update points when skill modifications change
+    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -484,6 +486,8 @@ function removeSkillModification(extraId, featureName, instanceIndex, skillIndex
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
+    // 🔧 FIX: Update points when skill modifications change
+    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -499,6 +503,8 @@ function updateSkillModification(extraId, featureName, instanceIndex, skillIndex
     
     instance.skillMods[skillIndex][field] = field === 'value' ? parseInt(value) : value;
     
+    // 🔧 FIX: Update points when skill modifications change
+    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -588,6 +594,9 @@ function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, v
     
     if (instance) {
         instance[field] = value;
+        
+        // 🔧 FIX: Update points when feature data changes
+        updatePointsDisplay();
         saveCharacter();
     }
 }
@@ -987,6 +996,28 @@ function updatePointsDisplay() {
         document.getElementById('pointsRemaining').className = 'points-remaining';
     }
     
+    // 🔧 DEBUG: Log points breakdown to console
+    console.log('Points breakdown:', {
+        skills: Object.values(character.skills).reduce((total, value) => total + Math.max(0, value), 0),
+        powers: character.powers.reduce((total, power) => {
+            if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) return total;
+            let powerCost = power.cost;
+            if (isHeritageFreePower(power.id)) powerCost = 0;
+            else if (power.credit) {
+                const credits = power.credit.split(',');
+                credits.forEach(credit => {
+                    const [powerName, creditValue] = credit.split(':');
+                    const hasPowerForCredit = character.powers.some(p => p.id === powerName);
+                    if (hasPowerForCredit) powerCost += parseInt(creditValue);
+                });
+            }
+            return total + Math.max(0, powerCost);
+        }, 0),
+        extras: character.extras.reduce((total, extra) => total + calculateExtraCost(extra), 0),
+        total: character.usedPoints,
+        remaining: remaining
+    });
+    
     updateCharacterSummary();
 }
 
@@ -1095,8 +1126,32 @@ function updateCharacterSummary() {
     }
     
     summary += `<h4>Point Allocation</h4>`;
-    summary += `<p><strong>Total Available:</strong> ${character.totalPoints}</p>`;
-    summary += `<p><strong>Used:</strong> ${character.usedPoints}</p>`;
+    
+    // 🔧 ENHANCED: Show detailed points breakdown
+    const skillsTotal = Object.values(character.skills).reduce((total, value) => total + Math.max(0, value), 0);
+    const powersTotal = character.powers.reduce((total, power) => {
+        if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) return total;
+        let powerCost = power.cost;
+        if (isHeritageFreePower(power.id)) powerCost = 0;
+        else if (power.credit) {
+            const credits = power.credit.split(',');
+            credits.forEach(credit => {
+                const [powerName, creditValue] = credit.split(':');
+                const hasPowerForCredit = character.powers.some(p => p.id === powerName);
+                if (hasPowerForCredit) powerCost += parseInt(creditValue);
+            });
+        }
+        return total + Math.max(0, powerCost);
+    }, 0);
+    const extrasTotal = character.extras.reduce((total, extra) => total + calculateExtraCost(extra), 0);
+    
+    summary += `<p><strong>Skills:</strong> ${skillsTotal} pts</p>`;
+    summary += `<p><strong>Powers:</strong> ${powersTotal} pts</p>`;
+    if (extrasTotal > 0) {
+        summary += `<p><strong>Extras:</strong> ${extrasTotal} pts</p>`;
+    }
+    summary += `<p><strong>Total Used:</strong> ${character.usedPoints} pts</p>`;
+    summary += `<p><strong>Total Available:</strong> ${character.totalPoints} pts</p>`;
     summary += `<p><strong>Good Stuff Rating:</strong> ${character.totalPoints - character.usedPoints}</p>`;
     
     summaryDiv.innerHTML = summary;
