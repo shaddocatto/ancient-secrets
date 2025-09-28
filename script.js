@@ -196,7 +196,7 @@ function renderExtraDisplayMode(extra) {
             featureGroups[f.name].push(f);
         });
         
-        const featureDetails = Object.entries(featureGroups).map(([name, instances]) => {
+const featureDetails = Object.entries(featureGroups).map(([name, instances]) => {
             if (instances.length === 1) {
                 const instance = instances[0];
                 if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
@@ -208,6 +208,10 @@ function renderExtraDisplayMode(extra) {
                 } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
                     const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
                     return `${name}: ${skillList}`;
+                } else if (name === 'Exceptional' && instance.description) {
+                    return `${name}: ${instance.description}`;
+                } else if (name === 'Technique' && instance.ability) {
+                    return `${name}: ${instance.ability}`;
                 } else if (instance.description) {
                     return `${name}: ${instance.description}`;
                 } else if (instance.ability) {
@@ -218,7 +222,7 @@ function renderExtraDisplayMode(extra) {
             } else {
                 return `${name} (×${instances.length})`;
             }
-        }).join('<br>');
+        }).join(', ');
         
         details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">${featureDetails}</div>`;
         
