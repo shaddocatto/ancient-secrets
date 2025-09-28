@@ -42,7 +42,6 @@ function addExtra() {
     character.extras.push(extra);
     renderExtra(extra);
     updatePointsDisplay();
-    saveCharacter(); // 🔧 FIX: Save immediately when extra is created
 }
 
 function removeExtra(extraId) {
@@ -156,10 +155,9 @@ function renderExtraDisplayMode(extra) {
                 } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
                     const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
                     return `${name}: ${skillList}`;
-                } else if (name === 'Training' && instance.skillName && instance.improvement) {
-                    return `${name}: ${instance.skillName} +${instance.improvement}`;
-                } else if (name === 'Exceptional' && instance.description) {
-                    return `${name}: ${instance.description}`;
+                } else if (name === 'Aspect' && instance.aspectText) {
+                    const invokesText = instance.freeInvokes > 1 ? ` (${instance.freeInvokes} free invokes)` : '';
+                    return `${name}: ${instance.aspectText}${invokesText}`;
                 } else if (name === 'Technique' && instance.ability) {
                     return `${name}: ${instance.ability}`;
                 } else if (instance.description) {
@@ -170,32 +168,7 @@ function renderExtraDisplayMode(extra) {
                     return name;
                 }
             } else {
-                // For multiple instances, show detailed breakdown
-                const instanceDetails = instances.map((instance, i) => {
-                    let detail = `${name} #${i + 1}`;
-                    if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
-                        const whenText = instance.circumstance ? ` when ${instance.circumstance}` : '';
-                        detail += `: Use ${instance.skillUsed} in place of ${instance.skillReplaced}${whenText}`;
-                    } else if (name === 'Focus' && instance.skill) {
-                        const whenText = instance.circumstance ? ` when ${instance.circumstance}` : '';
-                        detail += `: +2 to ${instance.skill}${whenText}`;
-                    } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
-                        const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
-                        detail += `: ${skillList}`;
-                    } else if (name === 'Training' && instance.skillName && instance.improvement) {
-                        detail += `: ${instance.skillName} +${instance.improvement}`;
-                    } else if (name === 'Exceptional' && instance.description) {
-                        detail += `: ${instance.description}`;
-                    } else if (name === 'Technique' && instance.ability) {
-                        detail += `: ${instance.ability}`;
-                    } else if (instance.description) {
-                        detail += `: ${instance.description}`;
-                    } else if (instance.ability) {
-                        detail += `: ${instance.ability}`;
-                    }
-                    return detail;
-                }).join('; ');
-                return instanceDetails;
+                return `${name} (×${instances.length})`;
             }
         }).join('<br>');
         
@@ -305,27 +278,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
             `;
             break;
             
-        case 'Training':
-            content = `
-                <div class="form-group">
-                    <label>Skill/Power to Improve:</label>
-                    <input type="text" 
-                           placeholder="e.g., Advanced Pattern Adept, Unique Skill Name"
-                           value="${instance.skillName || ''}"
-                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'skillName', this.value)"
-                           style="width: 100%; margin-bottom: 5px;">
-                    <label>Improvement (+1 per point):</label>
-                    <input type="number" min="1" max="12" 
-                           value="${instance.improvement || 1}"
-                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'improvement', parseInt(this.value)); updateExtraCostDisplay('${extraId}')"
-                           style="width: 100px;">
-                    <div style="color: #EFBF04; font-size: 0.8em; margin-top: 5px;">
-                        Cost: ${(instance.cost || 0.5) + (instance.improvement || 1)} points (Base: ${instance.cost || 0.5} + Improvement: ${instance.improvement || 1})
-                    </div>
-                </div>
-            `;
-            break;
-            
         case 'Exceptional':
             content = `
                 <div class="form-group">
@@ -397,14 +349,53 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
             break;
             
         case 'Technique':
+            const predefinedAbilities = ['Trump Defense', 'Pattern Psychic Defense', 'Shadow Travel', 'Hellride', 'Logrus Tendrils', 'Shapeshifting', 'Demon Form', 'Create Trump'];
+            const isCustom = instance.ability && !predefinedAbilities.includes(instance.ability);
             content = `
                 <div class="form-group">
                     <label>Power Ability:</label>
+                    <select onchange="handleTechniqueSelection('${extraId}', '${featureName}', ${index}, this.value)" style="width: 100%;">
+                        <option value="">Select a power ability...</option>
+                        <option value="Trump Defense" ${instance.ability === 'Trump Defense' ? 'selected' : ''}>Trump Defense (from Trump Artist)</option>
+                        <option value="Pattern Psychic Defense" ${instance.ability === 'Pattern Psychic Defense' ? 'selected' : ''}>Pattern Psychic Defense (from Pattern Adept)</option>
+                        <option value="Shadow Travel" ${instance.ability === 'Shadow Travel' ? 'selected' : ''}>Shadow Travel (from Pattern Adept)</option>
+                        <option value="Hellride" ${instance.ability === 'Hellride' ? 'selected' : ''}>Hellride (from Pattern Adept)</option>
+                        <option value="Logrus Tendrils" ${instance.ability === 'Logrus Tendrils' ? 'selected' : ''}>Logrus Tendrils (from Logrus Master)</option>
+                        <option value="Shapeshifting" ${instance.ability === 'Shapeshifting' ? 'selected' : ''}>Basic Shapeshifting (from Shapeshifting)</option>
+                        <option value="Demon Form" ${instance.ability === 'Demon Form' ? 'selected' : ''}>Demon Form (from Shapeshifting)</option>
+                        <option value="Create Trump" ${instance.ability === 'Create Trump' ? 'selected' : ''}>Create Trump (from Trump Artist)</option>
+                        <option value="Custom" ${isCustom ? 'selected' : ''}>Custom (specify below)</option>
+                    </select>
+                    <div id="${extraId}_${featureName.replace(/\s+/g, '_')}_custom_${index}" style="display: ${isCustom ? 'block' : 'none'}; margin-top: 5px;">
+                        <input type="text" 
+                               placeholder="Specify custom ability..."
+                               value="${isCustom ? instance.ability : ''}"
+                               onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'ability', this.value)"
+                               style="width: 100%;">
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'Aspect':
+            content = `
+                <div class="form-group">
+                    <label>Aspect:</label>
                     <input type="text" 
-                           placeholder="e.g., Trump Defense from Trump Artist"
-                           value="${instance.ability || ''}"
-                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'ability', this.value)"
+                           placeholder="e.g., Unbreakable Will, Ancient Knowledge, Master Swordsman"
+                           value="${instance.aspectText || ''}"
+                           onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'aspectText', this.value)"
                            style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label>Free Invokes:</label>
+                    <select onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'freeInvokes', this.value)" style="width: 100%;">
+                        <option value="1" ${(instance.freeInvokes || 1) == 1 ? 'selected' : ''}>1 Free Invoke</option>
+                        <option value="2" ${instance.freeInvokes == 2 ? 'selected' : ''}>2 Free Invokes (costs 2 Aspect features)</option>
+                    </select>
+                    <div style="font-size: 0.8em; color: #cccccc; margin-top: 5px; font-style: italic;">
+                        Note: Maximum 2 free invokes per aspect. Second invoke costs an additional Aspect feature.
+                    </div>
                 </div>
             `;
             break;
@@ -471,8 +462,6 @@ function addSkillModification(extraId, featureName, instanceIndex) {
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
-    // 🔧 FIX: Update points when skill modifications change
-    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -489,8 +478,29 @@ function removeSkillModification(extraId, featureName, instanceIndex, skillIndex
     const customDiv = document.getElementById(extraId + '_custom_options');
     customDiv.innerHTML = renderCustomOptions(extra);
     
-    // 🔧 FIX: Update points when skill modifications change
-    updatePointsDisplay();
+    saveCharacter();
+}
+
+function handleTechniqueSelection(extraId, featureName, instanceIndex, value) {
+    const extra = character.extras.find(e => e.id === extraId);
+    const instances = extra.features.filter(f => f.name === featureName);
+    const instance = instances[instanceIndex];
+    
+    if (!instance) return;
+    
+    if (value === 'Custom') {
+        // Show custom input and clear the ability field so user can type their own
+        instance.ability = '';
+        document.getElementById(`${extraId}_${featureName.replace(/\s+/g, '_')}_custom_${instanceIndex}`).style.display = 'block';
+    } else {
+        // Hide custom input and set the selected ability
+        instance.ability = value;
+        const customDiv = document.getElementById(`${extraId}_${featureName.replace(/\s+/g, '_')}_custom_${instanceIndex}`);
+        if (customDiv) {
+            customDiv.style.display = 'none';
+        }
+    }
+    
     saveCharacter();
 }
 
@@ -506,8 +516,6 @@ function updateSkillModification(extraId, featureName, instanceIndex, skillIndex
     
     instance.skillMods[skillIndex][field] = field === 'value' ? parseInt(value) : value;
     
-    // 🔧 FIX: Update points when skill modifications change
-    updatePointsDisplay();
     saveCharacter();
 }
 
@@ -526,13 +534,14 @@ function addFeatureInstance(extraId, featureName) {
         case 'Skilled':
             newInstance.skillMods = [];
             break;
-        case 'Training':
-            newInstance.skillName = '';
-            newInstance.improvement = 1;
-            break;
         case 'Exceptional':
         case 'Technique':
             newInstance.description = '';
+            newInstance.ability = '';
+            break;
+        case 'Aspect':
+            newInstance.aspectText = '';
+            newInstance.freeInvokes = 1;
             break;
         case 'Flexible':
             newInstance.skillUsed = '';
@@ -590,16 +599,6 @@ function removeFeatureInstance(extraId, featureName, instanceIndex) {
     }
 }
 
-function updateExtraCostDisplay(extraId) {
-    const extra = character.extras.find(e => e.id === extraId);
-    if (extra) {
-        const costDiv = document.querySelector(`#${extraId} .skill-cost`);
-        if (costDiv) {
-            costDiv.innerHTML = `<strong>Total Cost: ${calculateExtraCost(extra)} points</strong>`;
-        }
-    }
-}
-
 function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, value) {
     const extra = character.extras.find(e => e.id === extraId);
     const instances = extra.features.filter(f => f.name === featureName);
@@ -607,9 +606,6 @@ function updateFeatureInstanceData(extraId, featureName, instanceIndex, field, v
     
     if (instance) {
         instance[field] = value;
-        
-        // 🔧 FIX: Update points when feature data changes
-        updatePointsDisplay();
         saveCharacter();
     }
 }
@@ -652,7 +648,6 @@ function getAvailableFeatures(type) {
             { name: 'Focus', cost: 1, required: '', description: '+2 to a Skill when [describe circumstance].' },
             { name: 'Harmful', cost: 0.5, required: '', description: 'Do additional shift of harm for damage type or with Skill/Power if attack succeeds.' },
             { name: 'Protective', cost: 1, required: '', description: 'Reduces successful attack by one shift for damage type. If reduced to <1, attacker gets boost.' },
-            { name: 'Training', cost: 0.5, required: '', description: 'Additional skill modifications and 3 points to buy Skills, Powers, etc.' },
             { name: 'Technique', cost: 0.5, required: '', description: 'Add one ability from a Power. If full Power acquired later, this refunds back.' },
             { name: 'Higher Cost/Risk/Cursed', cost: -0.5, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 0.5 points back.' }
         ]
@@ -670,7 +665,7 @@ function updateExtraName(extraId) {
     const header = document.querySelector(`#${extraId} h3`);
     header.textContent = `Extra: ${extra.name || 'Unnamed'}`;
     
-    saveCharacter(); // 🔧 DEFENSIVE: Save after any extra modification
+    saveCharacter();
 }
 
 function updateExtraType(extraId) {
@@ -689,7 +684,7 @@ function updateExtraType(extraId) {
     heritageInfo.innerHTML = `<strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.`;
     
     updatePointsDisplay();
-    saveCharacter(); // 🔧 DEFENSIVE: Always save after modifications
+    saveCharacter();
 }
 
 function updateExtraMode(extraId, isSimple) {
@@ -700,14 +695,14 @@ function updateExtraMode(extraId, isSimple) {
     document.getElementById(extraId + '_custom_options').style.display = isSimple ? 'none' : 'block';
     
     updatePointsDisplay();
-    saveCharacter(); // 🔧 DEFENSIVE: Always save after modifications
+    saveCharacter();
 }
 
 function updateExtraAspect(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     const aspectInput = document.getElementById(extraId + '_aspect');
     extra.simpleAspect = aspectInput.value;
-    saveCharacter(); // 🔧 DEFENSIVE: Always save after modifications
+    saveCharacter();
 }
 
 function toggleExtraFeature(extraId, featureName, cost, required) {
@@ -730,13 +725,14 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
             case 'Skilled':
                 newInstance.skillMods = [];
                 break;
-            case 'Training':
-                newInstance.skillName = '';
-                newInstance.improvement = 1;
-                break;
             case 'Exceptional':
             case 'Technique':
                 newInstance.description = '';
+                newInstance.ability = '';
+                break;
+            case 'Aspect':
+                newInstance.aspectText = '';
+                newInstance.freeInvokes = 1;
                 break;
             case 'Flexible':
                 newInstance.skillUsed = '';
@@ -771,18 +767,8 @@ function calculateExtraCost(extra) {
         // Simple extras: just 1 point for basic functionality
         return 1;
     } else {
-        // Custom extras: sum of all features with special handling for Training
-        return extra.features.reduce((total, feature) => {
-            if (feature.name === 'Training') {
-                // Training cost = base cost (0.5) + improvement value
-                const baseCost = feature.cost || 0.5;
-                const improvementCost = feature.improvement || 1;
-                return total + baseCost + improvementCost;
-            } else {
-                // Other features just use their base cost
-                return total + feature.cost;
-            }
-        }, 0);
+        // Custom extras: sum of all features
+        return extra.features.reduce((total, feature) => total + feature.cost, 0);
     }
 }
 
@@ -1019,42 +1005,6 @@ function updatePointsDisplay() {
         document.getElementById('pointsRemaining').className = 'points-remaining';
     }
     
-    // 🔧 DEBUG: Log points breakdown to console with extras details
-    const extrasDebug = character.extras.map(extra => ({
-        name: extra.name || 'Unnamed',
-        type: extra.type,
-        isSimple: extra.isSimple,
-        cost: calculateExtraCost(extra),
-        features: extra.features.map(f => ({
-            name: f.name,
-            baseCost: f.cost,
-            improvement: f.improvement,
-            calculatedCost: f.name === 'Training' ? (f.cost || 0.5) + (f.improvement || 1) : f.cost
-        }))
-    }));
-    
-    console.log('Points breakdown:', {
-        skills: Object.values(character.skills).reduce((total, value) => total + Math.max(0, value), 0),
-        powers: character.powers.reduce((total, power) => {
-            if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) return total;
-            let powerCost = power.cost;
-            if (isHeritageFreePower(power.id)) powerCost = 0;
-            else if (power.credit) {
-                const credits = power.credit.split(',');
-                credits.forEach(credit => {
-                    const [powerName, creditValue] = credit.split(':');
-                    const hasPowerForCredit = character.powers.some(p => p.id === powerName);
-                    if (hasPowerForCredit) powerCost += parseInt(creditValue);
-                });
-            }
-            return total + Math.max(0, powerCost);
-        }, 0),
-        extras: character.extras.reduce((total, extra) => total + calculateExtraCost(extra), 0),
-        extrasDetail: extrasDebug,
-        total: character.usedPoints,
-        remaining: remaining
-    });
-    
     updateCharacterSummary();
 }
 
@@ -1063,16 +1013,13 @@ function updateCharacterSummary() {
     
     let summary = '<h3>Character Overview</h3>';
     
-    const characterName = document.getElementById('characterName').value;
+    const charName = document.getElementById('characterName').value;
     const playerName = document.getElementById('playerName').value;
     
-    if (characterName) {
-        summary += `<p><strong>Character:</strong> ${characterName}`;
-        if (playerName) {
-            summary += ` (Player: ${playerName})`;
-        }
-        summary += '</p>';
-    } else if (playerName) {
+    if (charName) {
+        summary += `<p><strong>Character:</strong> ${charName}</p>`;
+    }
+    if (playerName) {
         summary += `<p><strong>Player:</strong> ${playerName}</p>`;
     }
     
@@ -1149,8 +1096,10 @@ function updateCharacterSummary() {
                             return `${name} (${instance.skillUsed}→${instance.skillReplaced})`;
                         } else if (name === 'Focus' && instance.skill) {
                             return `${name} (+2 ${instance.skill})`;
-                        } else if (name === 'Training' && instance.skillName && instance.improvement) {
-                            return `${name} (${instance.skillName} +${instance.improvement})`;
+                        } else if (name === 'Aspect' && instance.aspectText) {
+                            return `${name} (${instance.aspectText})`;
+                        } else if (name === 'Technique' && instance.ability) {
+                            return `${name} (${instance.ability})`;
                         }
                         return name;
                     } else {
@@ -1163,32 +1112,8 @@ function updateCharacterSummary() {
     }
     
     summary += `<h4>Point Allocation</h4>`;
-    
-    // 🔧 ENHANCED: Show detailed points breakdown
-    const skillsTotal = Object.values(character.skills).reduce((total, value) => total + Math.max(0, value), 0);
-    const powersTotal = character.powers.reduce((total, power) => {
-        if (['dominion', 'essence', 'song', 'making', 'unmaking'].includes(power.id)) return total;
-        let powerCost = power.cost;
-        if (isHeritageFreePower(power.id)) powerCost = 0;
-        else if (power.credit) {
-            const credits = power.credit.split(',');
-            credits.forEach(credit => {
-                const [powerName, creditValue] = credit.split(':');
-                const hasPowerForCredit = character.powers.some(p => p.id === powerName);
-                if (hasPowerForCredit) powerCost += parseInt(creditValue);
-            });
-        }
-        return total + Math.max(0, powerCost);
-    }, 0);
-    const extrasTotal = character.extras.reduce((total, extra) => total + calculateExtraCost(extra), 0);
-    
-    summary += `<p><strong>Skills:</strong> ${skillsTotal} pts</p>`;
-    summary += `<p><strong>Powers:</strong> ${powersTotal} pts</p>`;
-    if (extrasTotal > 0) {
-        summary += `<p><strong>Extras:</strong> ${extrasTotal} pts</p>`;
-    }
-    summary += `<p><strong>Total Used:</strong> ${character.usedPoints} pts</p>`;
-    summary += `<p><strong>Total Available:</strong> ${character.totalPoints} pts</p>`;
+    summary += `<p><strong>Total Available:</strong> ${character.totalPoints}</p>`;
+    summary += `<p><strong>Used:</strong> ${character.usedPoints}</p>`;
     summary += `<p><strong>Good Stuff Rating:</strong> ${character.totalPoints - character.usedPoints}</p>`;
     
     summaryDiv.innerHTML = summary;
@@ -1197,21 +1122,6 @@ function updateCharacterSummary() {
 // Save/Load functionality
 function saveCharacter() {
     try {
-        // 🛡️ DEFENSIVE: Don't save if character seems to be in reset state
-        const currentExtrasCount = character.extras ? character.extras.length : 0;
-        const existingSave = localStorage.getItem('amberCharacter');
-        
-        if (existingSave) {
-            const existingData = JSON.parse(existingSave);
-            const savedExtrasCount = existingData.extras ? existingData.extras.length : 0;
-            
-            // If we have extras saved but current state shows 0, don't overwrite
-            if (savedExtrasCount > 0 && currentExtrasCount === 0 && extraIdCounter === 0) {
-                console.warn('🛡️ SAVE BLOCKED: Character appears to be in reset state, not overwriting existing extras');
-                return;
-            }
-        }
-        
         // Save form values
         const saveData = {
             ...character,
@@ -1261,17 +1171,6 @@ function loadCharacter() {
 
         const saveData = JSON.parse(saved);
         
-        // 🛡️ DEFENSIVE: Create backup before loading
-        const backupKey = 'amberCharacter_backup_' + Date.now();
-        localStorage.setItem(backupKey, saved);
-        console.log('🛡️ Backup created:', backupKey);
-        
-        // 🛡️ DEFENSIVE: Validate save data before loading
-        if (!saveData || typeof saveData !== 'object') {
-            console.error('🛡️ Invalid save data, not loading');
-            return;
-        }
-        
         // Restore form values
         if (saveData.characterName) document.getElementById('characterName').value = saveData.characterName;
         if (saveData.playerName) document.getElementById('playerName').value = saveData.playerName;
@@ -1308,35 +1207,19 @@ function loadCharacter() {
             updatePowers();
         }
 
-        // 🛡️ ENHANCED: Restore extras with validation and logging
-        if (saveData.extras && Array.isArray(saveData.extras)) {
-            console.log('🛡️ Loading', saveData.extras.length, 'extras from save data');
+        // Restore extras
+        if (saveData.extras) {
             character.extras = saveData.extras;
-            extraIdCounter = Math.max(saveData.extraIdCounter || 0, character.extras.length);
+            extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
             // Clear existing extras display
-            const extrasContainer = document.getElementById('extrasContainer');
-            if (extrasContainer) {
-                extrasContainer.innerHTML = '';
-                
-                // Re-render all extras
-                character.extras.forEach((extra, index) => {
-                    try {
-                        console.log('🛡️ Rendering extra', index + 1, ':', extra.name || 'Unnamed');
-                        renderExtra(extra);
-                    } catch (extraError) {
-                        console.error('🛡️ Error rendering extra:', extra, extraError);
-                    }
-                });
-                
-                console.log('🛡️ Successfully loaded', character.extras.length, 'extras');
-            }
-        } else {
-            console.warn('🛡️ No valid extras found in save data');
-            if (saveData.extras) {
-                console.warn('🛡️ Extras data type:', typeof saveData.extras, 'Value:', saveData.extras);
-            }
+            document.getElementById('extrasContainer').innerHTML = '';
+            
+            // Re-render all extras
+            character.extras.forEach(extra => {
+                renderExtra(extra);
+            });
         }
 
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
@@ -1344,8 +1227,7 @@ function loadCharacter() {
             document.getElementById('saveStatus').textContent = '';
         }, 3000);
     } catch (error) {
-        console.error('🛡️ Load failed:', error);
-        document.getElementById('saveStatus').textContent = 'Load failed - check console';
+        console.error('Load failed:', error);
     }
 }
 
@@ -1371,17 +1253,8 @@ function exportCharacter() {
     
     // Create a formatted text version
     let output = '=== ANCIENT SECRETS CHARACTER SHEET ===\n\n';
-    
-    if (exportData.characterName) {
-        output += `Character Name: ${exportData.characterName}\n`;
-    }
-    if (exportData.playerName) {
-        output += `Player Name: ${exportData.playerName}\n`;
-    }
-    if (exportData.characterName || exportData.playerName) {
-        output += '\n';
-    }
-    
+    output += `Character Name: ${exportData.characterName}\n`;
+    output += `Player Name: ${exportData.playerName}\n`;
     output += `Heritage: ${exportData.heritage}\n`;
     output += `Concept: ${exportData.concept}\n`;
     output += `Position: ${exportData.position}\n`;
@@ -1454,13 +1327,11 @@ function exportCharacter() {
                             if (instance.circumstance) {
                                 output += ` when ${instance.circumstance}`;
                             }
-                        } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
-                            const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
-                            output += `: Skills: ${skillList}`;
-                        } else if (name === 'Training' && instance.skillName && instance.improvement) {
-                            output += `: ${instance.skillName} +${instance.improvement}`;
-                        } else if (name === 'Exceptional' && instance.description) {
-                            output += `: ${instance.description}`;
+                        } else if (name === 'Aspect' && instance.aspectText) {
+                            output += `: ${instance.aspectText}`;
+                            if (instance.freeInvokes > 1) {
+                                output += ` (${instance.freeInvokes} free invokes)`;
+                            }
                         } else if (name === 'Technique' && instance.ability) {
                             output += `: ${instance.ability}`;
                         } else if (instance.description) {
@@ -1483,19 +1354,21 @@ function exportCharacter() {
                                 if (instance.circumstance) {
                                     output += ` when ${instance.circumstance}`;
                                 }
-                            } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
-                                const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
-                                output += `: Skills: ${skillList}`;
-                            } else if (name === 'Training' && instance.skillName && instance.improvement) {
-                                output += `: ${instance.skillName} +${instance.improvement}`;
-                            } else if (name === 'Exceptional' && instance.description) {
-                                output += `: ${instance.description}`;
+                            } else if (name === 'Aspect' && instance.aspectText) {
+                                output += `: ${instance.aspectText}`;
+                                if (instance.freeInvokes > 1) {
+                                    output += ` (${instance.freeInvokes} free invokes)`;
+                                }
                             } else if (name === 'Technique' && instance.ability) {
                                 output += `: ${instance.ability}`;
                             } else if (instance.description) {
                                 output += `: ${instance.description}`;
                             } else if (instance.ability) {
                                 output += `: ${instance.ability}`;
+                            }
+                            if (instance.skillMods && instance.skillMods.length > 0) {
+                                const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
+                                output += ` - Skills: ${skillList}`;
                             }
                             output += '\n';
                         });
@@ -1510,18 +1383,26 @@ function exportCharacter() {
     output += `Used: ${exportData.usedPoints}\n`;
     output += `Good Stuff Rating: ${exportData.totalPoints - exportData.usedPoints}\n`;
     
-    // Generate filename
-    let filename = 'Ancient Secrets - ';
-    if (exportData.characterName && exportData.playerName) {
-        filename += `${exportData.characterName} (${exportData.playerName})`;
-    } else if (exportData.characterName) {
-        filename += exportData.characterName;
-    } else if (exportData.playerName) {
-        filename += `Character (${exportData.playerName})`;
-    } else {
-        filename += 'Character';
+    // Create filename using character and/or player name
+    let filename = 'Ancient Secrets - Character.txt';
+    const charName = exportData.characterName;
+    const playerName = exportData.playerName;
+    
+    if (charName || playerName) {
+        let nameString = '';
+        if (charName) {
+            nameString = charName;
+            if (playerName) {
+                nameString += ` (${playerName})`;
+            }
+        } else if (playerName) {
+            nameString = `(${playerName})`;
+        }
+        
+        // Sanitize filename - remove invalid characters
+        const sanitizedName = nameString.replace(/[<>:"/\\|?*]/g, '');
+        filename = `Ancient Secrets - ${sanitizedName}.txt`;
     }
-    filename += '.txt';
     
     // Create downloadable file
     const blob = new Blob([output], { type: 'text/plain' });
@@ -1545,30 +1426,8 @@ document.addEventListener('DOMContentLoaded', function() {
     textInputs.forEach(inputId => {
         const element = document.getElementById(inputId);
         if (element) {
-            // Update character summary in real-time for name fields (visual feedback only)
-            if (inputId === 'characterName' || inputId === 'playerName') {
-                element.addEventListener('input', function() {
-                    updateCharacterSummary(); // Just update display, don't save yet
-                });
-            }
-            // Save when field loses focus (per field, not per character)
+            element.addEventListener('input', saveCharacter);
             element.addEventListener('blur', saveCharacter);
-            // Also save when Enter is pressed
-            element.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    saveCharacter();
-                }
-            });
         }
     });
-    
-    // 🔧 DEFENSIVE: Periodic auto-save every 30 seconds to prevent data loss
-    setInterval(function() {
-        try {
-            saveCharacter();
-            console.log('Periodic auto-save completed');
-        } catch (error) {
-            console.error('Periodic auto-save failed:', error);
-        }
-    }, 30000); // 30 seconds
 });

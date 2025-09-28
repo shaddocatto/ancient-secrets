@@ -192,21 +192,6 @@ select option {
     gap: 10px;
 }
 
-.power-item .form-row {
-    margin: 10px 0 5px 0;
-    flex-wrap: wrap;
-}
-
-.power-item .form-row input[type="number"] {
-    padding: 5px 8px;
-    font-size: 0.9em;
-}
-
-.power-item .form-row .skill-cost {
-    font-size: 0.75em;
-    margin-left: 10px;
-}
-
 .power-cost {
     background: #EFBF04;
     color: #1a0033;
@@ -313,7 +298,7 @@ select option {
 
 .feature-instance-header {
     display: flex;
-    justify-content: between;
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
@@ -375,15 +360,8 @@ select option {
     }
 
     .form-row {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-        margin: 10px 0;
-        flex-wrap: wrap;
-    }
-
-    .form-row .form-group {
-        margin: 0;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .skill-container {
