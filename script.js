@@ -1,5 +1,7 @@
 let character = {
     heritage: '',
+    characterName: '',
+    playerName: '',
     concept: '',
     position: '',
     trouble: '',
@@ -992,6 +994,19 @@ function updateCharacterSummary() {
     
     let summary = '<h3>Character Overview</h3>';
     
+    const characterName = document.getElementById('characterName').value;
+    const playerName = document.getElementById('playerName').value;
+    
+    if (characterName) {
+        summary += `<p><strong>Character:</strong> ${characterName}`;
+        if (playerName) {
+            summary += ` (Player: ${playerName})`;
+        }
+        summary += '</p>';
+    } else if (playerName) {
+        summary += `<p><strong>Player:</strong> ${playerName}</p>`;
+    }
+    
     if (character.heritage) {
         summary += `<p><strong>Heritage:</strong> ${character.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>`;
     }
@@ -1092,6 +1107,8 @@ function saveCharacter() {
         // Save form values
         const saveData = {
             ...character,
+            characterName: document.getElementById('characterName').value,
+            playerName: document.getElementById('playerName').value,
             concept: document.getElementById('concept').value,
             position: document.getElementById('position').value,
             trouble: document.getElementById('trouble').value,
@@ -1137,6 +1154,8 @@ function loadCharacter() {
         const saveData = JSON.parse(saved);
         
         // Restore form values
+        if (saveData.characterName) document.getElementById('characterName').value = saveData.characterName;
+        if (saveData.playerName) document.getElementById('playerName').value = saveData.playerName;
         if (saveData.concept) document.getElementById('concept').value = saveData.concept;
         if (saveData.position) document.getElementById('position').value = saveData.position;
         if (saveData.trouble) document.getElementById('trouble').value = saveData.trouble;
@@ -1205,6 +1224,8 @@ function exportCharacter() {
     // Collect all form data
     const exportData = {
         ...character,
+        characterName: document.getElementById('characterName').value,
+        playerName: document.getElementById('playerName').value,
         concept: document.getElementById('concept').value,
         position: document.getElementById('position').value,
         trouble: document.getElementById('trouble').value,
@@ -1214,6 +1235,17 @@ function exportCharacter() {
     
     // Create a formatted text version
     let output = '=== ANCIENT SECRETS CHARACTER SHEET ===\n\n';
+    
+    if (exportData.characterName) {
+        output += `Character Name: ${exportData.characterName}\n`;
+    }
+    if (exportData.playerName) {
+        output += `Player Name: ${exportData.playerName}\n`;
+    }
+    if (exportData.characterName || exportData.playerName) {
+        output += '\n';
+    }
+    
     output += `Heritage: ${exportData.heritage}\n`;
     output += `Concept: ${exportData.concept}\n`;
     output += `Position: ${exportData.position}\n`;
@@ -1342,12 +1374,25 @@ function exportCharacter() {
     output += `Used: ${exportData.usedPoints}\n`;
     output += `Good Stuff Rating: ${exportData.totalPoints - exportData.usedPoints}\n`;
     
+    // Generate filename
+    let filename = 'Ancient Secrets - ';
+    if (exportData.characterName && exportData.playerName) {
+        filename += `${exportData.characterName} (${exportData.playerName})`;
+    } else if (exportData.characterName) {
+        filename += exportData.characterName;
+    } else if (exportData.playerName) {
+        filename += `Character (${exportData.playerName})`;
+    } else {
+        filename += 'Character';
+    }
+    filename += '.txt';
+    
     // Create downloadable file
     const blob = new Blob([output], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ancient-secrets-character.txt';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1360,12 +1405,24 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePointsDisplay();
     
     // Add event listeners for text inputs
-    const textInputs = ['concept', 'position', 'trouble', 'goal', 'secret'];
+    const textInputs = ['characterName', 'playerName', 'concept', 'position', 'trouble', 'goal', 'secret'];
     textInputs.forEach(inputId => {
         const element = document.getElementById(inputId);
         if (element) {
-            element.addEventListener('input', saveCharacter);
+            // Update character summary in real-time for name fields (visual feedback only)
+            if (inputId === 'characterName' || inputId === 'playerName') {
+                element.addEventListener('input', function() {
+                    updateCharacterSummary(); // Just update display, don't save yet
+                });
+            }
+            // Save when field loses focus (per field, not per character)
             element.addEventListener('blur', saveCharacter);
+            // Also save when Enter is pressed
+            element.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    saveCharacter();
+                }
+            });
         }
     });
 });
