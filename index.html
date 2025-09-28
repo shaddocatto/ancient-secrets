@@ -18,19 +18,6 @@
             <div class="save-status" id="saveStatus">Auto-saving...</div>
         </div>
 
-        <!-- Character Identity -->
-        <div class="section">
-            <h2>Character Identity</h2>
-            <div class="form-group">
-                <label for="characterName">Character Name:</label>
-                <input type="text" id="characterName" placeholder="e.g., Benedict of Amber, Corwin Barimen">
-            </div>
-            <div class="form-group">
-                <label for="playerName">Player Name:</label>
-                <input type="text" id="playerName" placeholder="Your name">
-            </div>
-        </div>
-
         <!-- Heritage Selection -->
         <div class="section">
             <h2>Heritage</h2>
@@ -62,10 +49,6 @@
             <div class="form-group">
                 <label for="trouble">Trouble (What gets you into trouble?):</label>
                 <input type="text" id="trouble" placeholder="e.g., Cannot resist a challenge to my honor">
-            </div>
-            <div class="form-group">
-                <label for="goal">Goal (What are you trying to get done?):</label>
-                <input type="text" id="goal" placeholder="e.g., Restore the lost Shadow of my mother">
             </div>
             <div class="form-group">
                 <label for="secret">Secret (What are you hiding? Free invoke when revealed):</label>
@@ -204,7 +187,7 @@
                             <span class="power-cost" id="logrus-master-cost">4</span>
                             Logrus Master
                         </label>
-                        <div class="power-description">Requires: Shapeshifting; Chaos Heritage; Amber (0) Psyche, Chaos (-1) Endurance. Logrus Tendrils, Hang Spells, Find in Shadow</div>
+                        <div class="power-description">Requires: Shapeshifting; Amber (0) Psyche, Chaos (-1) Endurance. Logrus Tendrils, Hang Spells, Find in Shadow</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -253,16 +236,16 @@
                     </div>
                 </div>
 
-                <!-- Powers of the Abyss -->
+                <!-- Powers of Darkness -->
                 <div class="power-category">
-                    <h3>Powers of the Abyss</h3>
+                    <h3>Powers of Darkness</h3>
                     <div class="power-item">
                         <label>
                             <input type="checkbox" id="abyssal-lord" onchange="updatePowers()" data-cost="4" data-prereq="">
                             <span class="power-cost" id="abyssal-lord-cost">4</span>
                             Abyssal Lord
                         </label>
-                        <div class="power-description">Requires: Initiation into the Abyss; Amber (0) Psyche, Chaos (-1) Endurance. Summon/Control Souls/Dead, Abyssal Power, Teleportation</div>
+                        <div class="power-description">Requires: Abyssal Initiation; Amber (0) Psyche, Chaos (-1) Endurance. Summon/Control Souls/Dead, Abyssal Power, Teleportation</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -272,11 +255,6 @@
                         </label>
                         <div class="power-description">Requires: Abyssal Lord; Amber (0) Psyche and Endurance. Create Abyssal Constructs, Imbue with Abyssal Power, Soul Jar</div>
                     </div>
-                </div>
-
-                <!-- Powers of the Void -->
-                <div class="power-category">
-                    <h3>Powers of the Void</h3>
                     <div class="power-item">
                         <label>
                             <input type="checkbox" id="undershadow-manipulator" onchange="updatePowers()" data-cost="3" data-prereq="">
@@ -299,70 +277,7 @@
                             <span class="power-cost" id="keeper-void-cost">4</span>
                             Keeper of the Void
                         </label>
-                        <div class="power-description">Requires: Initiation into the Void; Amber (0) Psyche, Chaos (-1) Endurance. Find rift into Void, Survive Void, Communicate with creatures of the deep, Command Undershadow and Void creatures</div>
-                    </div>
-                </div>
-
-                <!-- Powers of the Tree -->
-                <div class="power-category">
-                    <h3>Powers of the Tree</h3>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="thraell-green" onchange="updatePowers()" data-cost="0" data-prereq="">
-                            <span class="power-cost" id="thraell-green-cost">Free</span>
-                            Thraell of The Green
-                        </label>
-                        <div class="power-description">Requires: Initiation into the Green; Chaos (-1) Strength and Endurance. Communicate with nature, manifest the Green</div>
-                    </div>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="ally-tree" onchange="updatePowers()" data-cost="3" data-credit="thraell-green:-1">
-                            <span class="power-cost" id="ally-tree-cost">3</span>
-                            Ally of The Tree
-                        </label>
-                        <div class="power-description">Requires: Mutual agreement; Amber (0) Strength and Endurance. Commune with Green, Travel within Green, Sustain Green</div>
-                    </div>
-                </div>
-
-                <!-- Powers of the Hunger -->
-                <div class="power-category">
-                    <h3>Powers of the Hunger</h3>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="vampiric-affliction" onchange="updatePowers()" data-cost="1" data-prereq="">
-                            <span class="power-cost" id="vampiric-affliction-cost">1</span>
-                            Vampiric Affliction
-                        </label>
-                        <div class="power-description">Requires: Vampire Heritage; Chaos (-1) Endurance. Enhance using blood, entrance weaker wills, shapeshift, damaged by sunlight</div>
-                    </div>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="advanced-vampiric" onchange="updatePowers()" data-cost="3" data-prereq="vampiric-affliction">
-                            <span class="power-cost" id="advanced-vampiric-cost">3</span>
-                            Advanced Vampiric Affliction
-                        </label>
-                        <div class="power-description">Requires: Vampiric Affliction; Amber (0) Endurance, Chaos (-1) Strength and Status. Control lesser vampires, invoke Hunger, blood sorcery</div>
-                    </div>
-                </div>
-
-                <!-- Powers of Faerie -->
-                <div class="power-category">
-                    <h3>Powers of Faerie</h3>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="fae-enchanter" onchange="updatePowers()" data-cost="2" data-prereq="">
-                            <span class="power-cost" id="fae-enchanter-cost">2</span>
-                            Fae Enchanter
-                        </label>
-                        <div class="power-description">Requires: Faerie Heritage; Chaos (-1) Status and Intrigue. Local Glamour, Binding Promises, Minor Blessings/Curses</div>
-                    </div>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="advanced-fae" onchange="updatePowers()" data-cost="4" data-prereq="fae-enchanter" data-credit="fae-enchanter:-2">
-                            <span class="power-cost" id="advanced-fae-cost">4</span>
-                            Advanced Fae Enchanter
-                        </label>
-                        <div class="power-description">Requires: Faerie Heritage; Amber (0) Status and Intrigue, Chaos (-1) Lore. Widespread Glamour, Major Blessings/Curses</div>
+                        <div class="power-description">Requires: Amber (0) Psyche, Chaos (-1) Endurance. Find rift into Void, Survive Void, Communicate with creatures of the deep, Command Undershadow and Void creatures</div>
                     </div>
                 </div>
 
@@ -383,7 +298,7 @@
                             <span class="power-cost" id="invocation-cost">3</span>
                             Invocation
                         </label>
-                        <div class="power-description">Requires: Chaos (-1) Psyche. True Name powers (Divine, Call, Summon, Banish, Compel, Bind), Purification</div>
+                        <div class="power-description">Requires: Amber (0) Psyche and Lore. True Name powers (Divine, Call, Summon, Banish, Compel, Bind), Purification</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -393,59 +308,38 @@
                         </label>
                         <div class="power-description">Requires: Ranked (+1) Lore. Enhance/diminish powers, create/break connections, alter local reality</div>
                     </div>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="mirror-enchantment" onchange="updatePowers()" data-cost="2" data-prereq="">
-                            <span class="power-cost" id="mirror-enchantment-cost">2</span>
-                            Mirror Enchantment
-                        </label>
-                        <div class="power-description">Requires: Shroudling/Vampire Heritage; Chaos (-1) Psyche and Lore. Enchanted mirrors, travel mirror-lands, call forth reflections</div>
-                    </div>
                 </div>
 
                 <!-- Powers of the Ancients -->
                 <div class="power-category">
                     <h3>Powers of the Ancients</h3>
-                    <p style="font-size: 0.8em; color: #EFBF04; margin-bottom: 10px; text-align: center;">GM Approval Required</p>
+                    <p style="font-size: 0.8em; color: #EFBF04; margin-bottom: 10px; text-align: center;">GM Approval Required - Enter cost manually</p>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="dominion" onchange="updatePowers()" data-cost="0" data-prereq="">
-                            <span class="power-cost" id="dominion-cost">GM</span>
+                            <input type="checkbox" id="dominion" onchange="updatePowers()" data-cost="0" data-gm-cost="true">
+                            <span class="power-cost gm" id="dominion-cost">GM</span>
                             Dominion
+                            <input type="number" class="gm-cost-input" id="dominion-manual-cost" placeholder="Cost" onchange="updateGMPowerCost('dominion')">
                         </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Establish Domain, Empower Domain, Control Domain</div>
+                        <div class="power-description">Requires: Ranked (+1) Status. Establish Domain, Empower Domain, Control Domain</div>
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="essence" onchange="updatePowers()" data-cost="0" data-prereq="">
-                            <span class="power-cost" id="essence-cost">GM</span>
+                            <input type="checkbox" id="essence" onchange="updatePowers()" data-cost="0" data-gm-cost="true">
+                            <span class="power-cost gm" id="essence-cost">GM</span>
                             Essence
+                            <input type="number" class="gm-cost-input" id="essence-manual-cost" placeholder="Cost" onchange="updateGMPowerCost('essence')">
                         </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Strength and Endurance. True Form (Invoke, Reveal, Empower), Banner Control</div>
+                        <div class="power-description">Requires: Ranked (+1) Endurance. True Form (Invoke, Reveal, Empower), Banner Control</div>
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="song" onchange="updatePowers()" data-cost="0" data-prereq="">
-                            <span class="power-cost" id="song-cost">GM</span>
-                            Song
+                            <input type="checkbox" id="song" onchange="updatePowers()" data-cost="0" data-gm-cost="true">
+                            <span class="power-cost gm" id="song-cost">GM</span>
+                            The Song
+                            <input type="number" class="gm-cost-input" id="song-manual-cost" placeholder="Cost" onchange="updateGMPowerCost('song')">
                         </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Join The Song, Guide The Song, Add To The Song</div>
-                    </div>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="making" onchange="updatePowers()" data-cost="0" data-prereq="">
-                            <span class="power-cost" id="making-cost">GM</span>
-                            Making
-                        </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Create Substance, Create Essence, Enhance Existence</div>
-                    </div>
-                    <div class="power-item">
-                        <label>
-                            <input type="checkbox" id="unmaking" onchange="updatePowers()" data-cost="0" data-prereq="">
-                            <span class="power-cost" id="unmaking-cost">GM</span>
-                            Unmaking
-                        </label>
-                        <div class="power-description">Requires: Ancient Heritage; Ranked (+1) Psyche. Destroy Substance, Destroy Essence, Destroy Existence</div>
+                        <div class="power-description">Requires: Ranked (+1) Psyche. Hear the Song, Join the Song, Guide the Song, Add to the Song</div>
                     </div>
                 </div>
             </div>
@@ -454,7 +348,7 @@
         <!-- Extras -->
         <div class="section">
             <h2>Extras (Optional)</h2>
-            <p style="margin-bottom: 20px; color: #cccccc;">GM approval required. Choose Simple (name + aspect + invokes) or Custom (detailed options below). </p>
+            <p style="margin-bottom: 20px; color: #cccccc;">GM approval required. Choose Simple (name + aspect + invokes) or Custom (detailed options below). <span style="color: #EFBF04;">UPDATED - All features from rulebook included!</span></p>
 
             <div id="extrasContainer">
                 <!-- Extras will be dynamically added here -->
@@ -478,6 +372,7 @@
         <div class="export-section">
             <button class="export-btn" onclick="exportCharacter()">Export Character</button>
             <button class="reset-btn" onclick="resetCharacter()">Reset All</button>
+            <button class="export-btn" onclick="testLocalStorage()" style="font-size: 0.8em; padding: 8px 16px; margin-left: 15px;">Test Save/Load</button>
         </div>
     </div>
 
