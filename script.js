@@ -1190,77 +1190,122 @@ function updateCharacterSummary() {
 }
 
 // Save/Load functionality
+let saveTimeout = null;
+
 function saveCharacter() {
-    try {
-        // Save form values
-        const saveData = {
-            ...character,
-            characterName: document.getElementById('characterName').value,
-            playerName: document.getElementById('playerName').value,
-            concept: document.getElementById('concept').value,
-            position: document.getElementById('position').value,
-            trouble: document.getElementById('trouble').value,
-            goal: document.getElementById('goal').value,
-            secret: document.getElementById('secret').value,
-            formValues: {
-                heritage: document.getElementById('heritage').value,
-                skills: {},
-                powers: {}
-            },
-            extraIdCounter: extraIdCounter,
-            featureInstanceCounter: featureInstanceCounter
-        };
-
-        // Save skill values
-        const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
-        skills.forEach(skill => {
-            saveData.formValues.skills[skill] = document.getElementById(skill).value;
-        });
-
-        // Save power selections
-        const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
-        powerElements.forEach(element => {
-            saveData.formValues.powers[element.id] = element.checked;
-        });
-
-        localStorage.setItem('amberCharacter', JSON.stringify(saveData));
-        document.getElementById('saveStatus').textContent = 'Saved ✓';
-        setTimeout(() => {
-            document.getElementById('saveStatus').textContent = '';
-        }, 2000);
-    } catch (error) {
-        console.error('Save failed:', error);
-        document.getElementById('saveStatus').textContent = 'Save failed!';
+    // Debounce saves to prevent race conditions
+    if (saveTimeout) {
+        clearTimeout(saveTimeout);
     }
+    
+    saveTimeout = setTimeout(() => {
+        try {
+            console.log('Saving character data...');
+            
+            // Ensure all DOM elements exist before reading values
+            const getValue = (id) => {
+                const element = document.getElementById(id);
+                return element ? element.value : '';
+            };
+            
+            // Save form values
+            const saveData = {
+                ...character,
+                characterName: getValue('characterName'),
+                playerName: getValue('playerName'),
+                concept: getValue('concept'),
+                position: getValue('position'),
+                trouble: getValue('trouble'),
+                goal: getValue('goal'),
+                secret: getValue('secret'),
+                formValues: {
+                    heritage: getValue('heritage'),
+                    skills: {},
+                    powers: {}
+                },
+                extraIdCounter: extraIdCounter,
+                featureInstanceCounter: featureInstanceCounter,
+                saveTimestamp: Date.now() // Add timestamp to track saves
+            };
+
+            // Save skill values
+            const skills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
+            skills.forEach(skill => {
+                saveData.formValues.skills[skill] = getValue(skill);
+            });
+
+            // Save power selections
+            const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
+            powerElements.forEach(element => {
+                saveData.formValues.powers[element.id] = element.checked;
+            });
+
+            console.log(`Saving ${character.extras.length} extras...`);
+            localStorage.setItem('amberCharacter', JSON.stringify(saveData));
+            
+            const statusElement = document.getElementById('saveStatus');
+            if (statusElement) {
+                statusElement.textContent = 'Saved ✓';
+                setTimeout(() => {
+                    if (statusElement) {
+                        statusElement.textContent = '';
+                    }
+                }, 2000);
+            }
+            
+            console.log('Save complete');
+        } catch (error) {
+            console.error('Save failed:', error);
+            const statusElement = document.getElementById('saveStatus');
+            if (statusElement) {
+                statusElement.textContent = 'Save failed!';
+            }
+        }
+    }, 100); // Small delay to debounce rapid saves
 }
 
 function loadCharacter() {
     try {
         const saved = localStorage.getItem('amberCharacter');
-        if (!saved) return;
+        if (!saved) {
+            console.log('No saved character data found');
+            return;
+        }
 
+        console.log('Loading character data...');
         const saveData = JSON.parse(saved);
         
-        // Restore form values
-        if (saveData.characterName) document.getElementById('characterName').value = saveData.characterName;
-        if (saveData.playerName) document.getElementById('playerName').value = saveData.playerName;
-        if (saveData.concept) document.getElementById('concept').value = saveData.concept;
-        if (saveData.position) document.getElementById('position').value = saveData.position;
-        if (saveData.trouble) document.getElementById('trouble').value = saveData.trouble;
-        if (saveData.goal) document.getElementById('goal').value = saveData.goal;
-        if (saveData.secret) document.getElementById('secret').value = saveData.secret;
+        // Restore form values - check if elements exist first
+        const restoreField = (id, value) => {
+            const element = document.getElementById(id);
+            if (element && value) {
+                element.value = value;
+            }
+        };
+        
+        restoreField('characterName', saveData.characterName);
+        restoreField('playerName', saveData.playerName);
+        restoreField('concept', saveData.concept);
+        restoreField('position', saveData.position);
+        restoreField('trouble', saveData.trouble);
+        restoreField('goal', saveData.goal);
+        restoreField('secret', saveData.secret);
 
         // Restore heritage
         if (saveData.formValues && saveData.formValues.heritage) {
-            document.getElementById('heritage').value = saveData.formValues.heritage;
-            updateHeritage();
+            const heritageElement = document.getElementById('heritage');
+            if (heritageElement) {
+                heritageElement.value = saveData.formValues.heritage;
+                updateHeritage();
+            }
         }
 
         // Restore skills
         if (saveData.formValues && saveData.formValues.skills) {
             Object.entries(saveData.formValues.skills).forEach(([skill, value]) => {
-                if (document.getElementById(skill)) {
-                    document.getElementById(skill).value = value;
+                const skillElement = document.getElementById(skill);
+                if (skillElement) {
+                    skillElement.value = value;
                 }
             });
             updateSkills();
@@ -1277,27 +1322,55 @@ function loadCharacter() {
             updatePowers();
         }
 
-        // Restore extras
-        if (saveData.extras) {
+        // Restore extras with better error handling
+        if (saveData.extras && Array.isArray(saveData.extras)) {
+            console.log(`Loading ${saveData.extras.length} extras...`);
             character.extras = saveData.extras;
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
             // Clear existing extras display
-            document.getElementById('extrasContainer').innerHTML = '';
-            
-            // Re-render all extras
-            character.extras.forEach(extra => {
-                renderExtra(extra);
-            });
+            const extrasContainer = document.getElementById('extrasContainer');
+            if (extrasContainer) {
+                extrasContainer.innerHTML = '';
+                
+                // Re-render all extras with error handling
+                character.extras.forEach((extra, index) => {
+                    try {
+                        console.log(`Rendering extra ${index + 1}: ${extra.name || 'Unnamed'}`);
+                        renderExtra(extra);
+                    } catch (error) {
+                        console.error(`Failed to render extra ${index + 1}:`, error);
+                    }
+                });
+                
+                console.log(`Successfully loaded ${character.extras.length} extras`);
+            } else {
+                console.error('extrasContainer element not found!');
+            }
+        } else {
+            console.log('No extras data to restore');
         }
+
+        // Update display after everything is loaded
+        updatePointsDisplay();
 
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
         setTimeout(() => {
-            document.getElementById('saveStatus').textContent = '';
+            const statusElement = document.getElementById('saveStatus');
+            if (statusElement) {
+                statusElement.textContent = '';
+            }
         }, 3000);
+        
+        console.log('Character load complete');
     } catch (error) {
         console.error('Load failed:', error);
+        // Don't show error to user unless it's critical
+        if (error.message.includes('JSON')) {
+            document.getElementById('saveStatus').textContent = 'Save file corrupted - starting fresh';
+            localStorage.removeItem('amberCharacter');
+        }
     }
 }
 
@@ -1504,16 +1577,36 @@ function exportCharacter() {
 
 // Initialize and set up auto-save
 document.addEventListener('DOMContentLoaded', function() {
-    loadCharacter();
-    updatePointsDisplay();
+    console.log('DOM Content Loaded - initializing character builder...');
     
-    // Add event listeners for text inputs
-    const textInputs = ['characterName', 'playerName', 'concept', 'position', 'trouble', 'goal', 'secret'];
-    textInputs.forEach(inputId => {
-        const element = document.getElementById(inputId);
-        if (element) {
-            element.addEventListener('input', saveCharacter);
-            element.addEventListener('blur', saveCharacter);
+    // Wait a tiny bit to ensure all elements are fully rendered
+    setTimeout(() => {
+        // Verify critical elements exist
+        const criticalElements = ['extrasContainer', 'characterName', 'heritage'];
+        const missingElements = criticalElements.filter(id => !document.getElementById(id));
+        
+        if (missingElements.length > 0) {
+            console.error('Critical elements missing:', missingElements);
+            return;
         }
-    });
+        
+        console.log('All critical elements found, loading character...');
+        loadCharacter();
+        updatePointsDisplay();
+        
+        // Add event listeners for text inputs
+        const textInputs = ['characterName', 'playerName', 'concept', 'position', 'trouble', 'goal', 'secret'];
+        textInputs.forEach(inputId => {
+            const element = document.getElementById(inputId);
+            if (element) {
+                element.addEventListener('input', saveCharacter);
+                element.addEventListener('blur', saveCharacter);
+                console.log(`Added event listeners to ${inputId}`);
+            } else {
+                console.warn(`Element ${inputId} not found for event listeners`);
+            }
+        });
+        
+        console.log('Character builder initialization complete');
+    }, 50); // Small delay to ensure DOM is completely ready
 });
