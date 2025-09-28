@@ -221,6 +221,27 @@ function renderExtraDisplayMode(extra) {
         }).join('<br>');
         
         details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">${featureDetails}</div>`;
+        
+        // Add skill modifiers summary if any exist
+        const allSkillMods = [];
+        extra.features.forEach(feature => {
+            if (feature.skillMods && feature.skillMods.length > 0) {
+                feature.skillMods.forEach(skillMod => {
+                    if (skillMod.skill && skillMod.value !== undefined) {
+                        allSkillMods.push(skillMod);
+                    }
+                });
+            }
+        });
+        
+        if (allSkillMods.length > 0) {
+            const skillModSummary = allSkillMods.map(sm => 
+                `${sm.skill.charAt(0).toUpperCase() + sm.skill.slice(1)} ${sm.value >= 0 ? '+' : ''}${sm.value}`
+            ).join(', ');
+            details += `<div style="margin: 10px 0; padding: 8px; background: rgba(239, 191, 4, 0.1); border-left: 3px solid #EFBF04; border-radius: 3px;">
+                <strong style="color: #EFBF04;">Skill Modifiers:</strong> ${skillModSummary}
+            </div>`;
+        }
     }
     
     return `
