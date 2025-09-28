@@ -160,6 +160,8 @@ function renderExtraDisplayMode(extra) {
                     return `${name}: ${instance.aspectText}${invokesText}`;
                 } else if (name === 'Technique' && instance.ability) {
                     return `${name}: ${instance.ability}`;
+                } else if (name === 'Exceptional' && instance.description) {
+                    return `${name}: ${instance.description}`;
                 } else if (instance.description) {
                     return `${name}: ${instance.description}`;
                 } else if (instance.ability) {
@@ -389,7 +391,7 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                 </div>
                 <div class="form-group">
                     <label>Free Invokes:</label>
-                    <select onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'freeInvokes', this.value)" style="width: 100%;">
+                    <select onchange="updateFeatureInstanceData('${extraId}', '${featureName}', ${index}, 'freeInvokes', parseInt(this.value))" style="width: 100%;">
                         <option value="1" ${(instance.freeInvokes || 1) == 1 ? 'selected' : ''}>1 Free Invoke</option>
                         <option value="2" ${instance.freeInvokes == 2 ? 'selected' : ''}>2 Free Invokes (costs 2 Aspect features)</option>
                     </select>
@@ -535,8 +537,9 @@ function addFeatureInstance(extraId, featureName) {
             newInstance.skillMods = [];
             break;
         case 'Exceptional':
-        case 'Technique':
             newInstance.description = '';
+            break;
+        case 'Technique':
             newInstance.ability = '';
             break;
         case 'Aspect':
@@ -551,6 +554,9 @@ function addFeatureInstance(extraId, featureName) {
         case 'Focus':
             newInstance.skill = '';
             newInstance.circumstance = '';
+            break;
+        default:
+            newInstance.description = '';
             break;
     }
     
@@ -726,8 +732,9 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
                 newInstance.skillMods = [];
                 break;
             case 'Exceptional':
-            case 'Technique':
                 newInstance.description = '';
+                break;
+            case 'Technique':
                 newInstance.ability = '';
                 break;
             case 'Aspect':
@@ -742,6 +749,9 @@ function toggleExtraFeature(extraId, featureName, cost, required) {
             case 'Focus':
                 newInstance.skill = '';
                 newInstance.circumstance = '';
+                break;
+            default:
+                newInstance.description = '';
                 break;
         }
         
@@ -1070,7 +1080,7 @@ function updateCharacterSummary() {
         }
     }
     
-    // Extras summary
+    // Extras summary with enhanced detail display
     if (character.extras.length > 0) {
         summary += '<h4>Extras</h4>';
         character.extras.forEach(extra => {
@@ -1089,24 +1099,84 @@ function updateCharacterSummary() {
                     if (!featureGroups[f.name]) featureGroups[f.name] = [];
                     featureGroups[f.name].push(f);
                 });
-                const featureList = Object.entries(featureGroups).map(([name, instances]) => {
+                
+                Object.entries(featureGroups).forEach(([name, instances]) => {
                     if (instances.length === 1) {
                         const instance = instances[0];
+                        let featureText = `  ${name}`;
+                        
                         if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
-                            return `${name} (${instance.skillUsed}→${instance.skillReplaced})`;
+                            featureText += `: Use ${instance.skillUsed} in place of ${instance.skillReplaced}`;
+                            if (instance.circumstance) {
+                                featureText += ` when ${instance.circumstance}`;
+                            }
                         } else if (name === 'Focus' && instance.skill) {
-                            return `${name} (+2 ${instance.skill})`;
+                            featureText += `: +2 to ${instance.skill}`;
+                            if (instance.circumstance) {
+                                featureText += ` when ${instance.circumstance}`;
+                            }
                         } else if (name === 'Aspect' && instance.aspectText) {
-                            return `${name} (${instance.aspectText})`;
+                            featureText += `: ${instance.aspectText}`;
+                            if (instance.freeInvokes > 1) {
+                                featureText += ` (${instance.freeInvokes} free invokes)`;
+                            }
                         } else if (name === 'Technique' && instance.ability) {
-                            return `${name} (${instance.ability})`;
+                            featureText += `: ${instance.ability}`;
+                        } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
+                            const skillList = instance.skillMods
+                                .filter(sm => sm.skill)
+                                .map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`)
+                                .join(', ');
+                            if (skillList) {
+                                featureText += `: ${skillList}`;
+                            }
+                        } else if (name === 'Exceptional' && instance.description) {
+                            featureText += `: ${instance.description}`;
+                        } else if (instance.description) {
+                            featureText += `: ${instance.description}`;
                         }
-                        return name;
+                        
+                        summary += `<p style="margin-left: 20px; font-style: italic;">${featureText}</p>`;
                     } else {
-                        return `${name} (×${instances.length})`;
+                        summary += `<p style="margin-left: 20px; font-style: italic;">  ${name} (×${instances.length})</p>`;
+                        instances.forEach((instance, i) => {
+                            let instanceText = `    #${i + 1}`;
+                            
+                            if (name === 'Flexible' && instance.skillUsed && instance.skillReplaced) {
+                                instanceText += `: Use ${instance.skillUsed} in place of ${instance.skillReplaced}`;
+                                if (instance.circumstance) {
+                                    instanceText += ` when ${instance.circumstance}`;
+                                }
+                            } else if (name === 'Focus' && instance.skill) {
+                                instanceText += `: +2 to ${instance.skill}`;
+                                if (instance.circumstance) {
+                                    instanceText += ` when ${instance.circumstance}`;
+                                }
+                            } else if (name === 'Aspect' && instance.aspectText) {
+                                instanceText += `: ${instance.aspectText}`;
+                                if (instance.freeInvokes > 1) {
+                                    instanceText += ` (${instance.freeInvokes} free invokes)`;
+                                }
+                            } else if (name === 'Technique' && instance.ability) {
+                                instanceText += `: ${instance.ability}`;
+                            } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
+                                const skillList = instance.skillMods
+                                    .filter(sm => sm.skill)
+                                    .map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`)
+                                    .join(', ');
+                                if (skillList) {
+                                    instanceText += `: ${skillList}`;
+                                }
+                            } else if (name === 'Exceptional' && instance.description) {
+                                instanceText += `: ${instance.description}`;
+                            } else if (instance.description) {
+                                instanceText += `: ${instance.description}`;
+                            }
+                            
+                            summary += `<p style="margin-left: 40px; font-style: italic;">${instanceText}</p>`;
+                        });
                     }
-                }).join(', ');
-                summary += `<p style="margin-left: 20px; font-style: italic;">Features: ${featureList}</p>`;
+                });
             }
         });
     }
@@ -1334,6 +1404,16 @@ function exportCharacter() {
                             }
                         } else if (name === 'Technique' && instance.ability) {
                             output += `: ${instance.ability}`;
+                        } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
+                            const skillList = instance.skillMods
+                                .filter(sm => sm.skill)
+                                .map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`)
+                                .join(', ');
+                            if (skillList) {
+                                output += `: ${skillList}`;
+                            }
+                        } else if (name === 'Exceptional' && instance.description) {
+                            output += `: ${instance.description}`;
                         } else if (instance.description) {
                             output += `: ${instance.description}`;
                         } else if (instance.ability) {
@@ -1361,14 +1441,20 @@ function exportCharacter() {
                                 }
                             } else if (name === 'Technique' && instance.ability) {
                                 output += `: ${instance.ability}`;
+                            } else if (name === 'Skilled' && instance.skillMods && instance.skillMods.length > 0) {
+                                const skillList = instance.skillMods
+                                    .filter(sm => sm.skill)
+                                    .map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`)
+                                    .join(', ');
+                                if (skillList) {
+                                    output += `: ${skillList}`;
+                                }
+                            } else if (name === 'Exceptional' && instance.description) {
+                                output += `: ${instance.description}`;
                             } else if (instance.description) {
                                 output += `: ${instance.description}`;
                             } else if (instance.ability) {
                                 output += `: ${instance.ability}`;
-                            }
-                            if (instance.skillMods && instance.skillMods.length > 0) {
-                                const skillList = instance.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
-                                output += ` - Skills: ${skillList}`;
                             }
                             output += '\n';
                         });
