@@ -42,6 +42,7 @@ function addExtra() {
     character.extras.push(extra);
     renderExtra(extra);
     updatePointsDisplay();
+    saveCharacter(); // 🔧 FIX: Save immediately when extra is created
 }
 
 function removeExtra(extraId) {
@@ -647,7 +648,7 @@ function updateExtraName(extraId) {
     const header = document.querySelector(`#${extraId} h3`);
     header.textContent = `Extra: ${extra.name || 'Unnamed'}`;
     
-    saveCharacter();
+    saveCharacter(); // 🔧 DEFENSIVE: Save after any extra modification
 }
 
 function updateExtraType(extraId) {
@@ -666,7 +667,7 @@ function updateExtraType(extraId) {
     heritageInfo.innerHTML = `<strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.`;
     
     updatePointsDisplay();
-    saveCharacter();
+    saveCharacter(); // 🔧 DEFENSIVE: Always save after modifications
 }
 
 function updateExtraMode(extraId, isSimple) {
@@ -677,14 +678,14 @@ function updateExtraMode(extraId, isSimple) {
     document.getElementById(extraId + '_custom_options').style.display = isSimple ? 'none' : 'block';
     
     updatePointsDisplay();
-    saveCharacter();
+    saveCharacter(); // 🔧 DEFENSIVE: Always save after modifications
 }
 
 function updateExtraAspect(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
     const aspectInput = document.getElementById(extraId + '_aspect');
     extra.simpleAspect = aspectInput.value;
-    saveCharacter();
+    saveCharacter(); // 🔧 DEFENSIVE: Always save after modifications
 }
 
 function toggleExtraFeature(extraId, featureName, cost, required) {
@@ -1153,6 +1154,9 @@ function loadCharacter() {
 
         const saveData = JSON.parse(saved);
         
+        // 🔧 DEFENSIVE: Backup current state before loading
+        const backup = { ...character };
+        
         // Restore form values
         if (saveData.characterName) document.getElementById('characterName').value = saveData.characterName;
         if (saveData.playerName) document.getElementById('playerName').value = saveData.playerName;
@@ -1189,19 +1193,29 @@ function loadCharacter() {
             updatePowers();
         }
 
-        // Restore extras
-        if (saveData.extras) {
+        // 🔧 ENHANCED: Restore extras with better error handling
+        if (saveData.extras && Array.isArray(saveData.extras)) {
             character.extras = saveData.extras;
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
             // Clear existing extras display
-            document.getElementById('extrasContainer').innerHTML = '';
-            
-            // Re-render all extras
-            character.extras.forEach(extra => {
-                renderExtra(extra);
-            });
+            const extrasContainer = document.getElementById('extrasContainer');
+            if (extrasContainer) {
+                extrasContainer.innerHTML = '';
+                
+                // Re-render all extras
+                character.extras.forEach(extra => {
+                    try {
+                        renderExtra(extra);
+                    } catch (extraError) {
+                        console.error('Error rendering extra:', extra, extraError);
+                        // Continue with other extras even if one fails
+                    }
+                });
+            }
+        } else {
+            console.warn('No extras found in save data or extras is not an array');
         }
 
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
@@ -1210,6 +1224,8 @@ function loadCharacter() {
         }, 3000);
     } catch (error) {
         console.error('Load failed:', error);
+        // 🔧 DEFENSIVE: Don't break the entire app if load fails
+        document.getElementById('saveStatus').textContent = 'Load failed - check console';
     }
 }
 
@@ -1425,4 +1441,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    
+    // 🔧 DEFENSIVE: Periodic auto-save every 30 seconds to prevent data loss
+    setInterval(function() {
+        try {
+            saveCharacter();
+            console.log('Periodic auto-save completed');
+        } catch (error) {
+            console.error('Periodic auto-save failed:', error);
+        }
+    }, 30000); // 30 seconds
 });
