@@ -335,32 +335,83 @@ function renderExtraDisplayMode(extra) {
     const costText = extraCost > 0 ? ` - ${extraCost} pts` : extraCost < 0 ? ` - Credits ${Math.abs(extraCost)} pts` : '';
     
     let details = '';
-    
+    // Build detailed description for the extra
     if (extra.isSimple && extra.simpleAspect) {
+        // Simple extras just display the aspect
         details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspect: ${extra.simpleAspect}</div>`;
     } else if (!extra.isSimple && extra.features.length > 0) {
-        const featureGroups = {};
-        extra.features.forEach(f => {
-            if (!featureGroups[f.name]) featureGroups[f.name] = [];
-            featureGroups[f.name].push(f);
-        });
-        
-        const featureDetails = Object.entries(featureGroups).map(([name, instances]) => {
-            if (instances.length === 1) {
-                const instance = instances[0];
-                let detail = name;
-                if (instance.description) detail += `: ${instance.description}`;
-                if (instance.skill) detail += `: +2 to ${instance.skill}`;
-                if (instance.skillUsed && instance.skillReplaced) detail += `: Use ${instance.skillUsed} for ${instance.skillReplaced}`;
-                return detail;
-            } else {
-                return `${name} (×${instances.length})`;
+        // Build a list of details for each feature instance
+        const lines = [];
+        extra.features.forEach(feature => {
+            const fname = feature.name;
+            switch (fname) {
+                case 'Training':
+                    if (feature.skill) {
+                        const lvl = parseInt(feature.level) || 0;
+                        if (lvl !== 0) {
+                            const skillDisplay = feature.skill
+                                .replace(/-/g, ' ')
+                                .replace(/\b\w/g, l => l.toUpperCase());
+                            lines.push(`Training: +${lvl} to ${skillDisplay}`);
+                        }
+                    }
+                    break;
+                case 'Skilled':
+                    if (Array.isArray(feature.skillMods) && feature.skillMods.length > 0) {
+                        const mods = feature.skillMods.map(sm => {
+                            if (!sm.skill || sm.value === undefined || sm.value === null || isNaN(sm.value)) return null;
+                            const sname = sm.skill.charAt(0).toUpperCase() + sm.skill.slice(1);
+                            return `${sname} (${sm.value >= 0 ? '+' : ''}${sm.value})`;
+                        }).filter(Boolean);
+                        if (mods.length > 0) {
+                            lines.push(`Skilled: ${mods.join(', ')}`);
+                        }
+                    }
+                    break;
+                case 'Focus':
+                    if (feature.skill) {
+                        const sname = feature.skill.charAt(0).toUpperCase() + feature.skill.slice(1);
+                        const when = feature.circumstance ? ` when ${feature.circumstance}` : '';
+                        lines.push(`Focus: +2 to ${sname}${when}`);
+                    }
+                    break;
+                case 'Flexible':
+                    if (feature.skillUsed && feature.skillReplaced) {
+                        const used = feature.skillUsed.charAt(0).toUpperCase() + feature.skillUsed.slice(1);
+                        const repl = feature.skillReplaced.charAt(0).toUpperCase() + feature.skillReplaced.slice(1);
+                        const when = feature.circumstance ? ` when ${feature.circumstance}` : '';
+                        lines.push(`Flexible: Use ${used} for ${repl}${when}`);
+                    }
+                    break;
+                case 'Technique':
+                    if (feature.ability) {
+                        lines.push(`Technique: ${feature.ability}`);
+                    }
+                    break;
+                case 'Talented':
+                case 'Unusual':
+                case 'Primal Born':
+                    if (feature.description) {
+                        lines.push(`${fname}: ${feature.description}`);
+                    }
+                    break;
+                case 'Aspect':
+                    if (feature.description) {
+                        lines.push(`Aspect: ${feature.description}`);
+                    }
+                    break;
+                default:
+                    if (feature.description) {
+                        lines.push(`${fname}: ${feature.description}`);
+                    }
+                    break;
             }
-        }).join('<br>');
-        
-        details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">${featureDetails}</div>`;
+        });
+        if (lines.length > 0) {
+            details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">${lines.join('<br>')}</div>`;
+        }
     }
-    
+
     return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0;">${extraName}${extraType}${costText}</h3>
@@ -450,10 +501,22 @@ function renderFeatureInstances(extraId, featureName, instances) {
 }
 
 function renderFeatureInstanceContent(extraId, featureName, instance, index) {
-    const skillOptions = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
-    const skillSelect = skillOptions.map(skill => 
-        `<option value="${skill}" ${instance.skill === skill ? 'selected' : ''}>${skill.charAt(0).toUpperCase() + skill.slice(1)}</option>`
-    ).join('');
+    // Build lists of selectable attributes for the various custom features.
+    // Base skills always include the core eight stats.
+    const baseSkills = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
+    // Skill options for the "Skilled" feature remain restricted to the base skills.
+    const skillOptions = baseSkills;
+    // When configuring a Training feature, players may target either a base skill or an advanced power.
+    // Gather any advanced powers the character currently has selected.
+    const selectedAdvanced = (character.powers || [])
+        .filter(p => p.id && p.id.startsWith('advanced-'))
+        .map(p => p.id);
+    const selectableOptions = [...baseSkills, ...selectedAdvanced];
+    // Convert the combined list into option tags for select inputs.  Display names are prettified.
+    const skillSelect = selectableOptions.map(opt => {
+        const display = opt.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return `<option value="${opt}" ${instance.skill === opt ? 'selected' : ''}>${display}</option>`;
+    }).join('');
     
     switch(featureName) {
         case 'Skilled':
@@ -867,6 +930,53 @@ function calculateUsedPoints() {
     return total;
 }
 
+/**
+ * Aggregate skill modifiers granted by Extras.  Certain custom features on
+ * Extras allow players to modify a skill’s base rating.  For example, the
+ * “Skilled” feature supports arbitrary skill modifiers via the skillMods
+ * array and “Training” provides a +1 per level to a single skill.  This
+ * helper walks through all extras and collects these modifications keyed
+ * by skill name.  The returned object has the shape
+ *   {
+ *     skillName: [ { extraName: string, featureName: string, value: number }, ... ],
+ *     ...
+ *   }
+ * Only modifiers with a numeric value are returned; other feature types
+ * provide situational bonuses and are represented in the extras detail
+ * section instead of here.
+ */
+function getSkillModifiers() {
+    const modifiers = {};
+    character.extras.forEach(extra => {
+        // Only complex extras can modify skills; simple extras just have an aspect
+        if (!extra.isSimple && extra.features && extra.features.length > 0) {
+            extra.features.forEach(feature => {
+                const featureName = feature.name;
+                // Skilled feature: arbitrary skill modifications
+                if (featureName === 'Skilled' && Array.isArray(feature.skillMods)) {
+                    feature.skillMods.forEach(mod => {
+                        // Skip incomplete entries
+                        if (!mod.skill || mod.value === undefined || mod.value === null || isNaN(mod.value)) return;
+                        const skill = mod.skill;
+                        const value = parseInt(mod.value);
+                        if (!modifiers[skill]) modifiers[skill] = [];
+                        modifiers[skill].push({ extraName: extra.name || 'Extra', featureName: featureName, value: value });
+                    });
+                }
+                // Training feature: +level to specified skill
+                if (featureName === 'Training' && feature.skill) {
+                    const skill = feature.skill;
+                    const level = parseInt(feature.level) || 0;
+                    if (level !== 0) {
+                        if (!modifiers[skill]) modifiers[skill] = [];
+                        modifiers[skill].push({ extraName: extra.name || 'Extra', featureName: featureName, value: level });
+                    }
+                }
+            });
+        }
+    });
+    return modifiers;
+}
 function updatePointsDisplay() {
     character.usedPoints = calculateUsedPoints();
     const remaining = character.totalPoints - character.usedPoints;
@@ -905,7 +1015,8 @@ function updateCharacterSummary() {
     if (playerName) html += `<li>Player: ${playerName}</li>`;
     if (character.heritage) {
         const heritageDisplay = character.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const heritagePointsDisplay = character.heritagePoints !== 0 ? ` (${character.heritagePoints > 0 ? '+' : ''}${character.heritagePoints} pts)` : '';
+        // Always show the heritage point adjustment, even when it is zero, to make the point impact explicit.
+        const heritagePointsDisplay = ` (${character.heritagePoints > 0 ? '+' : ''}${character.heritagePoints} pts)`;
         html += `<li>Heritage: ${heritageDisplay}${heritagePointsDisplay}</li>`;
     }
     html += '</ul>';
@@ -915,11 +1026,35 @@ function updateCharacterSummary() {
     html += '<div class="summary-section">';
     html += '<h4>Skills</h4>';
     html += '<ul class="summary-list">';
-    Object.entries(character.skills).forEach(([skill, value]) => {
+    // Gather all skill modifiers from extras
+    const skillModifiers = getSkillModifiers();
+    Object.entries(character.skills).forEach(([skill, baseValue]) => {
         const skillName = skill.charAt(0).toUpperCase() + skill.slice(1);
-        const skillCost = Math.max(0, value);
-        const costDisplay = skillCost > 0 ? ` (${skillCost} pts)` : '';
-        html += `<li>${skillName}: ${value >= 0 ? '+' : ''}${value}${costDisplay}</li>`;
+        const baseCost = Math.max(0, baseValue);
+        // Build modifier summary for this skill
+        const mods = skillModifiers[skill] || [];
+        let modSum = 0;
+        let modDetails = '';
+        if (mods.length > 0) {
+            // Sum the modifier values and build a descriptive string
+            const modStrings = mods.map(mod => {
+                modSum += mod.value;
+                return `${mod.value >= 0 ? '+' : ''}${mod.value} (${mod.featureName} from ${mod.extraName})`;
+            });
+            modDetails = modStrings.join(', ');
+        }
+        const totalValue = baseValue + modSum;
+        // Compose row: display base, mods and total clearly
+        let row = `${skillName}: ${baseValue >= 0 ? '+' : ''}${baseValue}`;
+        if (mods.length > 0) {
+            row += `, ${modDetails} → ${totalValue >= 0 ? '+' : ''}${totalValue}`;
+        } else {
+            // If no modifiers, the base is the total
+            row += `${baseValue !== totalValue ? ` → ${totalValue >= 0 ? '+' : ''}${totalValue}` : ''}`;
+        }
+        // Append cost for base value (points spent on skills only)
+        row += baseCost > 0 ? ` (${baseCost} pts)` : '';
+        html += `<li>${row}</li>`;
     });
     html += '</ul>';
     html += '</div>';
@@ -932,9 +1067,25 @@ function updateCharacterSummary() {
         let hasGMPowers = false;
         character.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            // Determine any training modifiers that apply to this power.  Training targets can include
+            // selected advanced powers, and modifiers are stored in the same structure as skills.
+            const mods = (skillModifiers[power.id] || []);
+            let modSum = 0;
+            let modDetails = '';
+            if (mods.length > 0) {
+                const modStrings = mods.map(mod => {
+                    modSum += mod.value;
+                    return `${mod.value >= 0 ? '+' : ''}${mod.value} (${mod.featureName} from ${mod.extraName})`;
+                });
+                modDetails = modStrings.join(', ');
+            }
             if (['dominion', 'essence', 'song'].includes(power.id)) {
                 const manualCost = gmPowerCosts[power.id];
-                html += `<li>${powerName} (${manualCost || 'GM approval required'} pts)</li>`;
+                let line = `${powerName} (${manualCost || 'GM approval required'} pts)`;
+                if (mods.length > 0) {
+                    line += ` - ${modDetails} → +${modSum}`;
+                }
+                html += `<li>${line}</li>`;
                 hasGMPowers = true;
             } else {
                 let displayCost = power.cost;
@@ -952,7 +1103,13 @@ function updateCharacterSummary() {
                     });
                     displayCost = Math.max(0, actualCost);
                 }
-                html += `<li>${powerName} (${displayCost === 'Free' ? 'Free' : displayCost + ' pts'})</li>`;
+                // Build base line with cost
+                let line = `${powerName} (${displayCost === 'Free' ? 'Free' : displayCost + ' pts'})`;
+                // Append any training modifiers for this power
+                if (mods.length > 0) {
+                    line += ` - ${modDetails} → +${modSum}`;
+                }
+                html += `<li>${line}</li>`;
             }
         });
         html += '</ul>';
@@ -972,13 +1129,89 @@ function updateCharacterSummary() {
             const extraType = extra.type ? ` (${extra.type.charAt(0).toUpperCase() + extra.type.slice(1)})` : '';
             const extraCost = calculateExtraCost(extra);
             const costText = extraCost > 0 ? ` - ${extraCost} pts` : extraCost < 0 ? ` - Credits ${Math.abs(extraCost)} pts` : '';
+            // Start list item
             html += `<li>${extraName}${extraType}${costText}`;
-            // Append sub-details
+            let detailLines = [];
             if (extra.isSimple && extra.simpleAspect) {
-                html += `<br><span style="margin-left: 15px; font-style: italic;">Aspect: ${extra.simpleAspect}</span>`;
+                detailLines.push(`Aspect: ${extra.simpleAspect}`);
             } else if (!extra.isSimple && extra.features.length > 0) {
-                const featureList = extra.features.map(f => f.name).join(', ');
-                html += `<br><span style="margin-left: 15px; font-style: italic;">Features: ${featureList}</span>`;
+                // Produce detailed descriptions per feature
+                extra.features.forEach(feature => {
+                    const fname = feature.name;
+                    switch (fname) {
+                        case 'Training':
+                            if (feature.skill) {
+                                const lvl = parseInt(feature.level) || 0;
+                                if (lvl !== 0) {
+                                    const skillDisplay = feature.skill
+                                        .replace(/-/g, ' ')
+                                        .replace(/\b\w/g, l => l.toUpperCase());
+                                    detailLines.push(`Training: +${lvl} to ${skillDisplay}`);
+                                }
+                            }
+                            break;
+                        case 'Skilled':
+                            if (Array.isArray(feature.skillMods) && feature.skillMods.length > 0) {
+                                const mods = feature.skillMods.map(mod => {
+                                    if (!mod.skill || mod.value === undefined || mod.value === null || isNaN(mod.value)) return null;
+                                    const sname = mod.skill.charAt(0).toUpperCase() + mod.skill.slice(1);
+                                    return `${sname} (${mod.value >= 0 ? '+' : ''}${mod.value})`;
+                                }).filter(Boolean);
+                                if (mods.length > 0) {
+                                    detailLines.push(`Skilled: ${mods.join(', ')}`);
+                                }
+                            }
+                            break;
+                        case 'Focus':
+                            if (feature.skill) {
+                                const sname = feature.skill.charAt(0).toUpperCase() + feature.skill.slice(1);
+                                const when = feature.circumstance ? ` when ${feature.circumstance}` : '';
+                                detailLines.push(`Focus: +2 to ${sname}${when}`);
+                            }
+                            break;
+                        case 'Flexible':
+                            if (feature.skillUsed && feature.skillReplaced) {
+                                const used = feature.skillUsed.charAt(0).toUpperCase() + feature.skillUsed.slice(1);
+                                const repl = feature.skillReplaced.charAt(0).toUpperCase() + feature.skillReplaced.slice(1);
+                                const when = feature.circumstance ? ` when ${feature.circumstance}` : '';
+                                detailLines.push(`Flexible: Use ${used} for ${repl}${when}`);
+                            }
+                            break;
+                        case 'Technique':
+                            if (feature.ability) {
+                                detailLines.push(`Technique: ${feature.ability}`);
+                            }
+                            break;
+                        case 'Talented':
+                        case 'Unusual':
+                        case 'Primal Born':
+                            if (feature.description) {
+                                detailLines.push(`${fname}: ${feature.description}`);
+                            }
+                            break;
+                        case 'Aspect':
+                            // These extras add aspects; attempt to show description if present
+                            if (feature.description) {
+                                detailLines.push(`Aspect: ${feature.description}`);
+                            }
+                            break;
+                        default:
+                            // Generic catch-all description
+                            if (feature.description) {
+                                detailLines.push(`${fname}: ${feature.description}`);
+                            }
+                            break;
+                    }
+                });
+                // If no descriptive lines were generated, fall back to listing feature names
+                if (detailLines.length === 0) {
+                    const names = extra.features.map(f => f.name).join(', ');
+                    detailLines.push(`Features: ${names}`);
+                }
+            }
+            // Append details to the list item
+            if (detailLines.length > 0) {
+                html += `<br><span style="margin-left: 15px; font-style: italic;">${detailLines.join('<br>')}</span>`;
             }
             html += `</li>`;
         });
@@ -1152,30 +1385,73 @@ function exportCharacter() {
     let output = '=== ANCIENT SECRETS CHARACTER SHEET ===\n\n';
     output += `Character Name: ${exportData.characterName || ''}\n`;
     output += `Player Name: ${exportData.playerName || ''}\n`;
-    output += `Heritage: ${exportData.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
-    if (exportData.heritagePoints !== 0) {
-        output += ` (${exportData.heritagePoints > 0 ? '+' : ''}${exportData.heritagePoints} pts)`;
+    {
+        // Always display the heritage point adjustment, including zero, to make it explicit
+        const heritageDisplay = exportData.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const hPts = exportData.heritagePoints;
+        output += `Heritage: ${heritageDisplay} (${hPts > 0 ? '+' : ''}${hPts} pts)\n`;
     }
-    output += `\n`;
     output += `Concept: ${exportData.concept}\n`;
     output += `Position: ${exportData.position}\n`;
     output += `Trouble: ${exportData.trouble}\n`;
     output += `Secret: ${exportData.secret}\n\n`;
     
     output += '=== SKILLS ===\n';
+    // Build a map of all skill modifiers from extras. This uses the same helper
+    // used in the summary to aggregate modifiers across all extras. It
+    // returns an object keyed by skill name with an array of modifier
+    // objects (value, featureName, extraName).
+    const skillModsForExport = getSkillModifiers();
     Object.entries(exportData.skills).forEach(([skill, value]) => {
-        const skillCost = Math.max(0, value);
-        const costDisplay = skillCost > 0 ? ` (${skillCost} pts)` : '';
-        output += `${skill.charAt(0).toUpperCase() + skill.slice(1)}: ${value >= 0 ? '+' : ''}${value}${costDisplay}\n`;
+        const skillNameCap = skill.charAt(0).toUpperCase() + skill.slice(1);
+        // Base point cost for the skill (only points above 0 cost anything)
+        const baseCost = Math.max(0, value);
+        // Gather any modifiers for this skill
+        const mods = skillModsForExport[skill] || [];
+        let modTotal = 0;
+        const modStrings = [];
+        mods.forEach(mod => {
+            modTotal += mod.value;
+            modStrings.push(`${mod.value >= 0 ? '+' : ''}${mod.value} (${mod.featureName} from ${mod.extraName})`);
+        });
+        const totalValue = value + modTotal;
+        // Build line. Always include the base value. If modifiers exist,
+        // include the list and the resulting total. Otherwise just show
+        // the base value (which is also the total).
+        let line = `${skillNameCap}: ${value >= 0 ? '+' : ''}${value}`;
+        if (mods.length > 0) {
+            line += `, ${modStrings.join(', ')} -> ${totalValue >= 0 ? '+' : ''}${totalValue}`;
+        } else if (value !== totalValue) {
+            // If base differs from total, show the total
+            line += ` -> ${totalValue >= 0 ? '+' : ''}${totalValue}`;
+        }
+        // Append cost for the base skill value
+        if (baseCost > 0) {
+            line += ` (${baseCost} pts)`;
+        }
+        output += line + '\n';
     });
     
     if (exportData.powers.length > 0) {
         output += '\n=== POWERS ===\n';
         exportData.powers.forEach(power => {
             const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            // Retrieve any training modifiers for this power from the aggregated skillMods map.
+            const powerMods = (skillModsForExport[power.id] || []);
+            let modTotal = 0;
+            const modStrings = [];
+            powerMods.forEach(mod => {
+                modTotal += mod.value;
+                modStrings.push(`${mod.value >= 0 ? '+' : ''}${mod.value} (${mod.featureName} from ${mod.extraName})`);
+            });
+            const modSummary = powerMods.length > 0 ? `${modStrings.join(', ')} -> +${modTotal}` : '';
             if (['dominion', 'essence', 'song'].includes(power.id)) {
                 const manualCost = gmPowerCosts[power.id];
-                output += `${powerName} (${manualCost || 'GM approval required'} pts)\n`;
+                output += `${powerName} (${manualCost || 'GM approval required'} pts)`;
+                if (modSummary) {
+                    output += ` - ${modSummary}`;
+                }
+                output += `\n`;
             } else {
                 let displayCost = power.cost;
                 if (isHeritageFreePower(power.id)) {
@@ -1192,7 +1468,11 @@ function exportCharacter() {
                     });
                     displayCost = Math.max(0, actualCost);
                 }
-                output += `${powerName} (${displayCost === 'Free' ? 'Free' : displayCost + ' pts'})\n`;
+                output += `${powerName} (${displayCost === 'Free' ? 'Free' : displayCost + ' pts'})`;
+                if (modSummary) {
+                    output += ` - ${modSummary}`;
+                }
+                output += `\n`;
             }
         });
     }
@@ -1211,16 +1491,57 @@ function exportCharacter() {
                 output += `  Aspect: ${extra.simpleAspect}\n`;
             } else if (!extra.isSimple && extra.features.length > 0) {
                 extra.features.forEach(feature => {
-                    output += `  ${feature.name}`;
-                    if (feature.description) output += `: ${feature.description}`;
-                    if (feature.skill) output += `: +2 to ${feature.skill}`;
-                    if (feature.skillUsed && feature.skillReplaced) output += `: Use ${feature.skillUsed} for ${feature.skillReplaced}`;
-                    if (feature.ability) output += `: ${feature.ability}`;
-                    if (feature.skillMods && feature.skillMods.length > 0) {
-                        const skillList = feature.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
-                        output += ` - Skills: ${skillList}`;
+                    // Begin line with feature name
+                    let line = `  ${feature.name}`;
+                    const fname = feature.name;
+                    switch (fname) {
+                        case 'Training':
+                            if (feature.skill) {
+                                const lvl = parseInt(feature.level) || 0;
+                                // Display advanced power names with spaces and capital letters
+                                const skillDisplay = feature.skill
+                                    .replace(/-/g, ' ')
+                                    .replace(/\b\w/g, l => l.toUpperCase());
+                                line += `: +${lvl} to ${skillDisplay}`;
+                            }
+                            break;
+                        case 'Skilled':
+                            if (Array.isArray(feature.skillMods) && feature.skillMods.length > 0) {
+                                const mods = feature.skillMods.map(sm => `${sm.skill}(${sm.value >= 0 ? '+' : ''}${sm.value})`).join(', ');
+                                line += `: ${mods}`;
+                            }
+                            break;
+                        case 'Focus':
+                            if (feature.skill) {
+                                const when = feature.circumstance ? ` when ${feature.circumstance}` : '';
+                                line += `: +2 to ${feature.skill}${when}`;
+                            }
+                            break;
+                        case 'Flexible':
+                            if (feature.skillUsed && feature.skillReplaced) {
+                                const when = feature.circumstance ? ` when ${feature.circumstance}` : '';
+                                line += `: Use ${feature.skillUsed} for ${feature.skillReplaced}${when}`;
+                            }
+                            break;
+                        case 'Technique':
+                            if (feature.ability) {
+                                line += `: ${feature.ability}`;
+                            }
+                            break;
+                        case 'Talented':
+                        case 'Unusual':
+                        case 'Primal Born':
+                            if (feature.description) {
+                                line += `: ${feature.description}`;
+                            }
+                            break;
+                        default:
+                            if (feature.description) {
+                                line += `: ${feature.description}`;
+                            }
+                            break;
                     }
-                    output += '\n';
+                    output += line + '\n';
                 });
             }
         });
@@ -1228,9 +1549,8 @@ function exportCharacter() {
     
     output += `\n=== POINT SUMMARY ===\n`;
     output += `Total Available: ${exportData.totalPoints}\n`;
-    if (exportData.heritagePoints !== 0) {
-        output += `Heritage Adjustment: ${exportData.heritagePoints > 0 ? '+' : ''}${exportData.heritagePoints}\n`;
-    }
+    // Always include the heritage adjustment in the point summary, even when zero
+    output += `Heritage Adjustment: ${exportData.heritagePoints > 0 ? '+' : ''}${exportData.heritagePoints}\n`;
     output += `Used: ${exportData.usedPoints}\n`;
     output += `Good Stuff Rating: ${exportData.totalPoints - exportData.usedPoints}\n`;
     

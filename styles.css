@@ -20,10 +20,12 @@ html, body {
 }
 
 .container {
-    width: 90%;
-    max-width: 1000px;
+    width: 95%;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 15px;
+    /* Provide space for the floating Good Stuff bar at the top */
+    padding-top: 100px;
 }
 
 h1 {
@@ -41,9 +43,9 @@ h1 {
 
 /* Section blocks */
 .section {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     background-color: #1e1e1e;
-    padding: 15px;
+    padding: 12px;
     border-radius: 6px;
 }
 .section h2 {
@@ -83,13 +85,17 @@ h1 {
 /* Points display */
 .points-display {
     background-color: #1e1e1e;
-    padding: 12px;
+    padding: 10px 15px;
     border-radius: 6px;
-    margin-bottom: 25px;
+    /* Float above other UI elements so the point total is always visible */
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
     display: flex;
     align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 .points-display h3 {
     margin: 0;
@@ -119,15 +125,44 @@ h1 {
 }
 
 /* Skills */
+/*
+ * Skills grid
+ *
+ * Use a responsive grid for the skill list. On smaller screens skills
+ * collapse down to one or two columns, while on wider desktop views
+ * there are four columns. This prevents the skills from spanning
+ * the full width and makes better use of horizontal space.
+ */
 .skill-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 10px;
 }
+
+/* two columns on medium screens */
+@media (min-width: 600px) {
+    .skill-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* three columns on large screens */
+@media (min-width: 900px) {
+    .skill-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* four columns on extra‑wide screens */
+@media (min-width: 1200px) {
+    .skill-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
 .skill-item {
-    flex: 1 1 calc(50% - 15px);
     background-color: #2e2e2e;
-    padding: 10px;
+    padding: 8px;
     border-radius: 4px;
 }
 .skill-item label {
@@ -148,15 +183,36 @@ h1 {
 }
 
 /* Powers */
+/*
+ * Powers grid
+ *
+ * Arrange power categories in a responsive grid similar to skills. On
+ * narrow screens powers stack vertically. On medium screens there are
+ * two columns, and on larger desktops there are three columns. This
+ * improves the use of horizontal space and avoids powers stretching
+ * across the full width.
+ */
 .powers-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 10px;
 }
+
+@media (min-width: 600px) {
+    .powers-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .powers-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 .power-category {
-    flex: 1 1 calc(50% - 15px);
     background-color: #2e2e2e;
-    padding: 10px;
+    padding: 8px;
     border-radius: 4px;
 }
 .power-category h3 {
@@ -175,7 +231,7 @@ h1 {
     color: #f5f5f5;
 }
 .power-item .power-cost {
-    background-color: #444;
+    background-color: #333;
     color: #EFBF04;
     padding: 2px 6px;
     border-radius: 3px;
@@ -183,12 +239,28 @@ h1 {
     margin-right: 6px;
     min-width: 28px;
     text-align: center;
+    /* Prevent users from confusing the cost label with an editable field */
+    pointer-events: none;
 }
 .power-description {
     font-size: 0.75em;
     color: #888;
     margin-left: 22px;
     margin-top: 3px;
+}
+
+/* Style for manual GM cost inputs on ancient powers.  These fields should look
+   distinct from skill/point inputs so players understand they are editing
+   the GM-determined cost and not a rank or level. */
+.gm-cost-input {
+    width: 60px;
+    margin-left: 8px;
+    padding: 4px;
+    background-color: #2e2e2e;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #f5f5f5;
+    font-size: 0.8em;
 }
 .power-item.disabled {
     opacity: 0.5;
@@ -212,7 +284,7 @@ h1 {
     background-color: #2e2e2e;
     padding: 8px;
     border-radius: 4px;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 .feature-instance-header {
     display: flex;
