@@ -1197,6 +1197,21 @@ function updateCharacterSummary() {
 // Save/Load functionality
 function saveCharacter() {
     try {
+        // 🛡️ DEFENSIVE: Don't save if character seems to be in reset state
+        const currentExtrasCount = character.extras ? character.extras.length : 0;
+        const existingSave = localStorage.getItem('amberCharacter');
+        
+        if (existingSave) {
+            const existingData = JSON.parse(existingSave);
+            const savedExtrasCount = existingData.extras ? existingData.extras.length : 0;
+            
+            // If we have extras saved but current state shows 0, don't overwrite
+            if (savedExtrasCount > 0 && currentExtrasCount === 0 && extraIdCounter === 0) {
+                console.warn('🛡️ SAVE BLOCKED: Character appears to be in reset state, not overwriting existing extras');
+                return;
+            }
+        }
+        
         // Save form values
         const saveData = {
             ...character,
@@ -1246,8 +1261,16 @@ function loadCharacter() {
 
         const saveData = JSON.parse(saved);
         
-        // 🔧 DEFENSIVE: Backup current state before loading
-        const backup = { ...character };
+        // 🛡️ DEFENSIVE: Create backup before loading
+        const backupKey = 'amberCharacter_backup_' + Date.now();
+        localStorage.setItem(backupKey, saved);
+        console.log('🛡️ Backup created:', backupKey);
+        
+        // 🛡️ DEFENSIVE: Validate save data before loading
+        if (!saveData || typeof saveData !== 'object') {
+            console.error('🛡️ Invalid save data, not loading');
+            return;
+        }
         
         // Restore form values
         if (saveData.characterName) document.getElementById('characterName').value = saveData.characterName;
@@ -1285,10 +1308,11 @@ function loadCharacter() {
             updatePowers();
         }
 
-        // 🔧 ENHANCED: Restore extras with better error handling
+        // 🛡️ ENHANCED: Restore extras with validation and logging
         if (saveData.extras && Array.isArray(saveData.extras)) {
+            console.log('🛡️ Loading', saveData.extras.length, 'extras from save data');
             character.extras = saveData.extras;
-            extraIdCounter = saveData.extraIdCounter || 0;
+            extraIdCounter = Math.max(saveData.extraIdCounter || 0, character.extras.length);
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
             // Clear existing extras display
@@ -1297,17 +1321,22 @@ function loadCharacter() {
                 extrasContainer.innerHTML = '';
                 
                 // Re-render all extras
-                character.extras.forEach(extra => {
+                character.extras.forEach((extra, index) => {
                     try {
+                        console.log('🛡️ Rendering extra', index + 1, ':', extra.name || 'Unnamed');
                         renderExtra(extra);
                     } catch (extraError) {
-                        console.error('Error rendering extra:', extra, extraError);
-                        // Continue with other extras even if one fails
+                        console.error('🛡️ Error rendering extra:', extra, extraError);
                     }
                 });
+                
+                console.log('🛡️ Successfully loaded', character.extras.length, 'extras');
             }
         } else {
-            console.warn('No extras found in save data or extras is not an array');
+            console.warn('🛡️ No valid extras found in save data');
+            if (saveData.extras) {
+                console.warn('🛡️ Extras data type:', typeof saveData.extras, 'Value:', saveData.extras);
+            }
         }
 
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
@@ -1315,8 +1344,7 @@ function loadCharacter() {
             document.getElementById('saveStatus').textContent = '';
         }, 3000);
     } catch (error) {
-        console.error('Load failed:', error);
-        // 🔧 DEFENSIVE: Don't break the entire app if load fails
+        console.error('🛡️ Load failed:', error);
         document.getElementById('saveStatus').textContent = 'Load failed - check console';
     }
 }
