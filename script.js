@@ -40,7 +40,7 @@ function addExtra() {
     character.extras.push(extra);
     renderExtra(extra);
     updatePointsDisplay();
-    saveCharacter(); // Save the new extra to localStorage
+    saveCharacter(); // Ensure saving happens
 }
 
 function removeExtra(extraId) {
@@ -1300,6 +1300,9 @@ function updateCharacterSummary() {
 // Save/Load functionality
 function saveCharacter() {
     try {
+        // Ensure character.extras exists
+        if (!character.extras) character.extras = [];
+        
         // Save form values
         const saveData = {
             ...character,
@@ -1329,7 +1332,9 @@ function saveCharacter() {
             saveData.formValues.powers[element.id] = element.checked;
         });
 
+        console.log('Saving character with', saveData.extras.length, 'extras');
         localStorage.setItem('amberCharacter', JSON.stringify(saveData));
+        
         document.getElementById('saveStatus').textContent = 'Saved ✓';
         setTimeout(() => {
             document.getElementById('saveStatus').textContent = '';
@@ -1353,6 +1358,9 @@ function loadCharacter() {
         if (saveData.usedPoints !== undefined) character.usedPoints = saveData.usedPoints;
         if (saveData.skills) character.skills = saveData.skills;
         if (saveData.powers) character.powers = saveData.powers;
+        
+        // Initialize extras array if it doesn't exist
+        if (!character.extras) character.extras = [];
         
         // Restore form values
         if (saveData.concept) document.getElementById('concept').value = saveData.concept;
@@ -1391,8 +1399,8 @@ function loadCharacter() {
             updatePowers();
         }
 
-        // Restore extras
-        if (saveData.extras) {
+        // Restore extras with improved error handling
+        if (saveData.extras && Array.isArray(saveData.extras)) {
             character.extras = saveData.extras;
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
@@ -1404,23 +1412,39 @@ function loadCharacter() {
                     delete extra.simpleAspect;
                 }
                 if (!extra.simpleAspects) extra.simpleAspects = [];
+                
+                // Ensure features array exists
+                if (!extra.features) extra.features = [];
+                
+                // Ensure required properties exist
+                if (extra.isEditing === undefined) extra.isEditing = false;
             });
             
             // Clear existing extras display
-            document.getElementById('extrasContainer').innerHTML = '';
-            
-            // Re-render all extras
-            character.extras.forEach(extra => {
-                renderExtra(extra);
-            });
+            const extrasContainer = document.getElementById('extrasContainer');
+            if (extrasContainer) {
+                extrasContainer.innerHTML = '';
+                
+                // Re-render all extras
+                character.extras.forEach(extra => {
+                    renderExtra(extra);
+                });
+            }
+        } else {
+            // No extras found, initialize empty array
+            character.extras = [];
         }
 
+        console.log('Character loaded successfully. Extras count:', character.extras.length);
+        
         document.getElementById('saveStatus').textContent = 'Loaded previous save ✓';
         setTimeout(() => {
             document.getElementById('saveStatus').textContent = '';
         }, 3000);
     } catch (error) {
         console.error('Load failed:', error);
+        // Initialize empty extras array on error
+        if (!character.extras) character.extras = [];
     }
 }
 
