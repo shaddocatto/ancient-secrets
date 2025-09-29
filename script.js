@@ -1090,75 +1090,76 @@ function getSkillModifiers() {
     });
     return modifiers;
 }
+
+function computePointTotals() {
+  const pool = character.totalPoints || 60;
+
+  // Heritage cost: store as positive for display math
+  const heritageCost = Math.abs(character.heritagePoints || 0);
+
+  // Skills: 1 per rank above 0
+  const skillsCost = Object.values(character.skills || {})
+    .reduce((s, v) => s + (v > 0 ? v : 0), 0);
+
+  // Powers
+  function isHeritageFreePower(id) {
+    const h = character.heritage;
+    return (h === 'recognized-amber' || h === 'both') && id === 'pattern-adept'
+        || (h === 'chaos' || h === 'both') && id === 'shapeshifting';
+  }
+  function hasPower(id) {
+    return (character.powers || []).some(p => p.id === id);
+  }
+  function powerNetCost(p) {
+    if (isHeritageFreePower(p.id)) return 0;
+    let c = Number(p.cost || 0);
+    if (p.id === 'grand-stair-warden' && hasPower('pattern-adept')) c -= 1;
+    if (p.id === 'advanced-shapeshifting' && hasPower('shapeshifting')) c -= 3;
+    if (p.id === 'umbra-mastery' && hasPower('shapeshifting')) c -= 2;
+    return Math.max(c, 0);
+  }
+  const powersCost = (character.powers || []).reduce((s, p) => s + powerNetCost(p), 0);
+
+  // Extras
+  const extrasCost = (character.extras || []).reduce((s, ex) => s + calculateExtraCost(ex), 0);
+
+  const totalUsed = heritageCost + skillsCost + powersCost + extrasCost;
+  const goodStuff = pool - totalUsed;
+
+  return { pool, heritageCost, skillsCost, powersCost, extrasCost, totalUsed, goodStuff };
+}
+
 function updatePointsDisplay() {
-    character.usedPoints = calculateUsedPoints();
-    const remaining = character.totalPoints - character.usedPoints;
-    
-    document.getElementById('pointsRemaining').textContent = remaining;
-    
-    const statusDiv = document.getElementById('pointsStatus');
-    if (remaining < 0) {
-        statusDiv.innerHTML = '<div class="points-warning">Over Budget!</div>';
-        document.getElementById('pointsRemaining').className = 'points-remaining points-warning';
-    } else if (remaining === 0) {
-        statusDiv.innerHTML = '<div class="success">Perfect!</div>';
-        document.getElementById('pointsRemaining').className = 'points-remaining';
-    } else {
-        statusDiv.innerHTML = '';
-        document.getElementById('pointsRemaining').className = 'points-remaining';
-    }
-    
-    updateCharacterSummary();
+  const el = document.getElementById('pointsDisplayValue');
+  if (!el) return;
+
+  const totals = computePointTotals();
+  // If you want to enforce whole numbers visually:
+  // el.textContent = String(Math.round(totals.goodStuff));
+  el.textContent = String(totals.goodStuff);
 }
 
 function updateCharacterSummary() {
   const el = document.getElementById('characterSummary');
   if (!el) return;
 
-  // ---- costs (unchanged logic) ----
-  const heritageCost = Math.abs(character.heritagePoints || 0);
-  const skillsCost = Object.values(character.skills || {})
-    .reduce((s,v)=>s+(v>0?v:0),0);
+  const t = computePointTotals();
 
-  function isHeritageFreePower(id){
-    const h = character.heritage;
-    return (h==='recognized-amber'||h==='both') && id==='pattern-adept'
-        || (h==='chaos'||h==='both') && id==='shapeshifting';
-  }
-  function hasPower(id){ return (character.powers||[]).some(p=>p.id===id); }
-  function powerNetCost(p){
-    if (isHeritageFreePower(p.id)) return 0;
-    let c = Number(p.cost||0);
-    if (p.id==='grand-stair-warden' && hasPower('pattern-adept')) c -= 1;
-    if (p.id==='advanced-shapeshifting' && hasPower('shapeshifting')) c -= 3;
-    if (p.id==='umbra-mastery' && hasPower('shapeshifting')) c -= 2;
-    return Math.max(c,0);
-  }
-  const powersCost = (character.powers||[]).reduce((s,p)=>s+powerNetCost(p),0);
-  const extrasCost = (character.extras||[]).reduce((s,e)=>s+calculateExtraCost(e),0);
-
-  const totalUsed = heritageCost + skillsCost + powersCost + extrasCost;
-  const pool = character.totalPoints || 60;
-  const goodStuff = pool - totalUsed;
-
-  // ---- render a fresh summary (no concatenation) ----
   let html = '';
   html += '<div class="summary-section">';
   html += '<h4>Point Allocation</h4>';
   html += '<ul class="summary-list">';
-  html += `<li>Total Available: ${pool}</li>`;
-  html += `<li>Heritage Cost: ${heritageCost}</li>`;
-  html += `<li>Skills: ${skillsCost}</li>`;
-  html += `<li>Powers: ${powersCost}</li>`;
-  html += `<li>Extras: ${extrasCost}</li>`;
-  html += `<li><strong>Total Used: ${totalUsed}</strong></li>`;
-  html += `<li><strong>Good Stuff: ${goodStuff}</strong></li>`;
+  html += `<li>Total Available: ${t.pool}</li>`;
+  html += `<li>Heritage Cost: ${t.heritageCost}</li>`;
+  html += `<li>Skills: ${t.skillsCost}</li>`;
+  html += `<li>Powers: ${t.powersCost}</li>`;
+  html += `<li>Extras: ${t.extrasCost}</li>`;
+  html += `<li><strong>Total Used: ${t.totalUsed}</strong></li>`;
+  html += `<li><strong>Good Stuff: ${t.goodStuff}</strong></li>`;
   html += '</ul></div>';
 
-  // If you have other sections, build them here and append to html.
-  // e.g., html += renderAspects(); html += renderSkillsBreakdown(); html += renderExtrasSnapshot();
-
-  el.innerHTML = html; // overwrite, don’t prepend/append previous HTML
+  // append your other sections after this
+  el.innerHTML = html; 
 }
 
 // Save/Load functionality
