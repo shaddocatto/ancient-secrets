@@ -169,18 +169,17 @@ function calcHeritageAdjustments(char) {
    Rendering — Overlay / Footer / Extras
    ------------------------- */
 function cacheEls() {
-  els.overlay = document.getElementById("overlay-summary");
-  els.footer  = document.getElementById("footer-summary");
-  els.extras  = document.getElementById("extras-container");
+  els.overlay     = document.getElementById("overlay-summary");
+  els.footer      = document.getElementById("footer-summary");
+  els.extras      = document.getElementById("extras-container");
 
-  // Manage Characters section
-  els.manageList   = document.getElementById("manage-list");
-  els.btnNew       = document.getElementById("btn-new-character");
-  els.btnSave      = document.getElementById("btn-save-character");
-  els.btnDelete    = document.getElementById("btn-delete-character");
-
-  // Optional: import
-  els.importInput  = document.getElementById("import-json");
+  // Manage Characters
+  els.charSelect  = document.getElementById("characterSelect");
+  els.btnNew      = document.getElementById("newCharacterBtn");
+  els.btnImport   = document.getElementById("importCharacterBtn");
+  els.btnExport   = document.getElementById("exportJsonBtn");
+  els.btnDelete   = document.getElementById("deleteCharacterBtn");
+  els.importInput = document.getElementById("importFile");
 }
 
 function renderOverlay(char) {
@@ -271,23 +270,20 @@ function ensureNameUnique(base, map) {
 }
 
 function renderManageList() {
-  if (!els.manageList) return;
+  if (!els.charSelect) return;
   const map = loadAllCharacters();
   const names = Object.keys(map).sort((a,b)=>a.localeCompare(b));
   const active = currentName;
 
-  els.manageList.innerHTML = names.map(n => `
-    <button class="char-item${n===active ? ' active':''}" data-name="${escapeHtml(n)}" title="Switch to ${escapeHtml(n)}">
-      ${escapeHtml(n)}
-    </button>
-  `).join(names.length ? "" : `<em>No saved characters yet.</em>`);
+  els.charSelect.innerHTML = names.map(n =>
+    `<option value="${escapeHtml(n)}"${n===active ? " selected":""}>${escapeHtml(n)}</option>`
+  ).join("");
 
-  els.manageList.querySelectorAll(".char-item").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const name = btn.getAttribute("data-name");
-      switchCharacter(name);
-    });
-  });
+  // When user selects a different character
+  els.charSelect.onchange = () => {
+    const name = els.charSelect.value;
+    switchCharacter(name);
+  };
 }
 
 function newCharacter() {
@@ -409,9 +405,12 @@ function loadIntoEditor(data, name) {
    ------------------------- */
 function wireManageButtons() {
   if (els.btnNew)    els.btnNew.addEventListener("click", newCharacter);
-  if (els.btnSave)   els.btnSave.addEventListener("click", saveCharacter);
+  if (els.btnSave)   {/* you don’t have a Save button — saving can happen on edits or on New/Import */}
   if (els.btnDelete) els.btnDelete.addEventListener("click", deleteCharacter);
+  if (els.btnImport) els.btnImport.addEventListener("click", () => els.importInput.click());
+  if (els.btnExport) els.btnExport.addEventListener("click", exportCharacterJSON);
 }
+
 function wireImportInput() {
   if (!els.importInput) return;
   els.importInput.addEventListener("change", async (e) => {
@@ -428,6 +427,19 @@ function wireImportInput() {
       e.target.value = ""; // allow re-importing same file
     }
   });
+}
+
+function exportCharacterJSON() {
+  if (!currentCharacter) return;
+  const data = JSON.stringify(currentCharacter, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${currentName || "character"}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function init() {
