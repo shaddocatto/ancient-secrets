@@ -1112,67 +1112,41 @@ function updatePointsDisplay() {
 }
 
 function updateCharacterSummary() {
-  const summaryEl = document.getElementById('characterSummary');
-  if (!summaryEl) return;
+  const el = document.getElementById('characterSummary');
+  if (!el) return;
 
-  // Helpers
+  // ---- costs (unchanged logic) ----
   const heritageCost = Math.abs(character.heritagePoints || 0);
+  const skillsCost = Object.values(character.skills || {})
+    .reduce((s,v)=>s+(v>0?v:0),0);
 
-  // Skills: 1 point per rank above 0
-  const skillsCost = Object.values(character.skills || {}).reduce((sum, v) => sum + (v > 0 ? v : 0), 0);
-
-  // Powers: compute net cost, honoring free-from-heritage and credits.
-  function isHeritageFreePower(id) {
+  function isHeritageFreePower(id){
     const h = character.heritage;
-    if (h === 'recognized-amber' || h === 'both') {
-      if (id === 'pattern-adept') return true;
-    }
-    if (h === 'chaos' || h === 'both') {
-      if (id === 'shapeshifting') return true;
-    }
-    return false;
+    return (h==='recognized-amber'||h==='both') && id==='pattern-adept'
+        || (h==='chaos'||h==='both') && id==='shapeshifting';
   }
-  function hasPower(id) {
-    return (character.powers || []).some(p => p.id === id);
-  }
-
-  // Credit helpers (kept narrow & explicit; extend if you add more)
-  function powerNetCost(p) {
-    // Free by heritage?
+  function hasPower(id){ return (character.powers||[]).some(p=>p.id===id); }
+  function powerNetCost(p){
     if (isHeritageFreePower(p.id)) return 0;
-
-    // Base cost
-    let cost = Number(p.cost || 0);
-
-    // Known credits
-    // Warden of the Grand Stair: -1 if Pattern Adept
-    if (p.id === 'grand-stair-warden' && hasPower('pattern-adept')) cost -= 1;
-
-    // Advanced Shapeshifting: -3 if Shapeshifting
-    if (p.id === 'advanced-shapeshifting' && hasPower('shapeshifting')) cost -= 3;
-
-    // Umbra Mastery: -2 if Shapeshifting
-    if (p.id === 'umbra-mastery' && hasPower('shapeshifting')) cost -= 2;
-
-    // (Add further credits here if your rules expand)
-
-    return Math.max(cost, 0);
+    let c = Number(p.cost||0);
+    if (p.id==='grand-stair-warden' && hasPower('pattern-adept')) c -= 1;
+    if (p.id==='advanced-shapeshifting' && hasPower('shapeshifting')) c -= 3;
+    if (p.id==='umbra-mastery' && hasPower('shapeshifting')) c -= 2;
+    return Math.max(c,0);
   }
-
-  const powersCost = (character.powers || []).reduce((sum, p) => sum + powerNetCost(p), 0);
-
-  // Extras: use existing calculator
-  const extrasCost = (character.extras || []).reduce((sum, ex) => sum + calculateExtraCost(ex), 0);
+  const powersCost = (character.powers||[]).reduce((s,p)=>s+powerNetCost(p),0);
+  const extrasCost = (character.extras||[]).reduce((s,e)=>s+calculateExtraCost(e),0);
 
   const totalUsed = heritageCost + skillsCost + powersCost + extrasCost;
-  const goodStuff = (character.totalPoints || 60) - totalUsed;
+  const pool = character.totalPoints || 60;
+  const goodStuff = pool - totalUsed;
 
-  // Render
+  // ---- render a fresh summary (no concatenation) ----
   let html = '';
   html += '<div class="summary-section">';
   html += '<h4>Point Allocation</h4>';
   html += '<ul class="summary-list">';
-  html += `<li>Total Available: ${character.totalPoints || 60}</li>`;
+  html += `<li>Total Available: ${pool}</li>`;
   html += `<li>Heritage Cost: ${heritageCost}</li>`;
   html += `<li>Skills: ${skillsCost}</li>`;
   html += `<li>Powers: ${powersCost}</li>`;
@@ -1181,10 +1155,11 @@ function updateCharacterSummary() {
   html += `<li><strong>Good Stuff: ${goodStuff}</strong></li>`;
   html += '</ul></div>';
 
-  // (Keep your existing sections below — Aspects, Skills grid w/ modifiers, Extras snapshot, etc.)
-  summaryEl.innerHTML = html + summaryEl.innerHTML.replace(/^[\s\S]*?<div class="summary-section">/,'<div class="summary-section">');
-}
+  // If you have other sections, build them here and append to html.
+  // e.g., html += renderAspects(); html += renderSkillsBreakdown(); html += renderExtrasSnapshot();
 
+  el.innerHTML = html; // overwrite, don’t prepend/append previous HTML
+}
 
 // Save/Load functionality
 function saveCharacter() {
@@ -1213,6 +1188,18 @@ function saveCharacter() {
                 // If cloning fails for any reason, fall back to a shallow copy
                 lastGoodExtras = character.extras.slice();
             }
+        }
+
+        // Guard: never persist a transient empty extras array
+        if (!Array.isArray(character.extras)) character.extras = [];
+        if (character.extras.length === 0 && Array.isArray(lastGoodExtras) && lastGoodExtras.length > 0) {
+          // keep in-memory extras but DO NOT overwrite storage with empty;
+          // we'll rely on lastGoodExtras to prevent data loss.
+        }
+        
+        // also, update lastGoodExtras whenever we have a non-empty list
+        if (character.extras.length > 0) {
+          lastGoodExtras = JSON.parse(JSON.stringify(character.extras));
         }
 
         const saveData = {
