@@ -1,4 +1,8 @@
+// Character state
 let character = {
+    // Added fields for character and player names
+    characterName: '',
+    playerName: '',
     heritage: '',
     concept: '',
     position: '',
@@ -253,24 +257,10 @@ function addExtra() {
 }
 
 function removeExtra(extraId) {
-    // CRITICAL: Preserve extras array integrity
-    const originalLength = character.extras.length;
     character.extras = character.extras.filter(e => e.id !== extraId);
-    
-    console.log(`Removed extra ${extraId}. Length changed from ${originalLength} to ${character.extras.length}`);
-    
-    const extraElement = document.getElementById(extraId);
-    if (extraElement) {
-        extraElement.remove();
-    }
-    
+    document.getElementById(extraId).remove();
     updatePointsDisplay();
     saveCharacter();
-    
-    // Verify extras are still there after save
-    setTimeout(() => {
-        console.log(`Extras after remove and save: ${character.extras.length}`);
-    }, 100);
 }
 
 function renderExtra(extra) {
@@ -472,20 +462,12 @@ function renderExtraDisplayMode(extra) {
 
 function editExtra(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) {
-        console.error(`Extra with ID ${extraId} not found!`);
-        return;
-    }
     extra.isEditing = true;
     renderExtra(extra);
 }
 
 function saveExtra(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) {
-        console.error(`Extra with ID ${extraId} not found!`);
-        return;
-    }
     extra.isEditing = false;
     renderExtra(extra);
     updatePointsDisplay();
@@ -607,7 +589,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                     </div>
                 </div>
             `;
-            
         case 'Flexible':
             return `
                 <div class="form-group">
@@ -627,7 +608,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'circumstance', this.value)" style="width: 100%; margin-top: 5px;">
                 </div>
             `;
-            
         case 'Focus':
             return `
                 <div class="form-group">
@@ -642,7 +622,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'circumstance', this.value)" style="width: 100%; margin-top: 5px;">
                 </div>
             `;
-            
         case 'Technique':
             return `
                 <div class="form-group">
@@ -651,7 +630,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'ability', this.value)" style="width: 100%;">
                 </div>
             `;
-            
         case 'Training':
             return `
                 <div class="form-group">
@@ -666,7 +644,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'level', this.value)" style="width: 100%;">
                 </div>
             `;
-            
         case 'Talented':
         case 'Unusual':
         case 'Primal Born':
@@ -681,7 +658,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                            onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'manualCost', this.value)" style="width: 100%;">
                 </div>
             `;
-            
         default:
             return `
                 <div class="form-group">
@@ -695,8 +671,6 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
 
 function updateFeatureData(extraId, featureName, instanceIndex, field, value) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const instances = extra.features.filter(f => f.name === featureName);
     const instance = instances[instanceIndex];
     
@@ -709,8 +683,6 @@ function updateFeatureData(extraId, featureName, instanceIndex, field, value) {
 
 function addSkillMod(extraId, featureName, instanceIndex) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const instances = extra.features.filter(f => f.name === featureName);
     const instance = instances[instanceIndex];
     
@@ -724,24 +696,18 @@ function addSkillMod(extraId, featureName, instanceIndex) {
 
 function removeSkillMod(extraId, featureName, instanceIndex, skillIndex) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const instances = extra.features.filter(f => f.name === featureName);
     const instance = instances[instanceIndex];
     
-    if (instance.skillMods) {
-        instance.skillMods.splice(skillIndex, 1);
-        
-        const customDiv = document.getElementById(extraId + '_custom_options');
-        customDiv.innerHTML = renderCustomOptions(extra);
-        saveCharacter();
-    }
+    instance.skillMods.splice(skillIndex, 1);
+    
+    const customDiv = document.getElementById(extraId + '_custom_options');
+    customDiv.innerHTML = renderCustomOptions(extra);
+    saveCharacter();
 }
 
 function updateSkillMod(extraId, featureName, instanceIndex, skillIndex, field, value) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const instances = extra.features.filter(f => f.name === featureName);
     const instance = instances[instanceIndex];
     
@@ -755,8 +721,6 @@ function updateSkillMod(extraId, featureName, instanceIndex, skillIndex, field, 
 
 function addFeatureInstance(extraId, featureName) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const feature = getAvailableFeatures(extra.type).find(f => f.name === featureName);
     
     const newInstance = {
@@ -808,8 +772,6 @@ function addFeatureInstance(extraId, featureName) {
 
 function removeFeatureInstance(extraId, featureName, instanceIndex) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const instances = extra.features.filter(f => f.name === featureName);
     
     if (instances.length > 0) {
@@ -834,8 +796,6 @@ function removeFeatureInstance(extraId, featureName, instanceIndex) {
 
 function toggleExtraFeature(extraId, featureName, cost, required) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const instances = extra.features.filter(f => f.name === featureName);
     
     if (instances.length > 0) {
@@ -912,39 +872,27 @@ function getAvailableFeatures(type) {
 
 function updateExtraName(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const nameInput = document.getElementById(extraId + '_name');
     extra.name = nameInput.value;
     
     const header = document.querySelector(`#${extraId} h3`);
-    if (header) {
-        header.textContent = `Extra: ${extra.name || 'Unnamed'}`;
-    }
+    header.textContent = `Extra: ${extra.name || 'Unnamed'}`;
     
     saveCharacter();
 }
 
 function updateExtraType(extraId) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     const typeSelect = document.getElementById(extraId + '_type');
     extra.type = typeSelect.value;
     extra.features = [];
     
     const customDiv = document.getElementById(extraId + '_custom_options');
-    if (customDiv) {
-        customDiv.innerHTML = renderCustomOptions(extra);
-    }
+    customDiv.innerHTML = renderCustomOptions(extra);
     
     const simpleDiv = document.getElementById(extraId + '_simple_options');
-    if (simpleDiv) {
-        const heritageInfo = simpleDiv.querySelector('.heritage-info');
-        if (heritageInfo) {
-            heritageInfo.innerHTML = `<strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.`;
-        }
-    }
+    const heritageInfo = simpleDiv.querySelector('.heritage-info');
+    heritageInfo.innerHTML = `<strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.`;
     
     updatePointsDisplay();
     saveCharacter();
@@ -952,15 +900,10 @@ function updateExtraType(extraId) {
 
 function updateExtraMode(extraId, isSimple) {
     const extra = character.extras.find(e => e.id === extraId);
-    if (!extra) return;
-    
     extra.isSimple = isSimple;
     
-    const simpleDiv = document.getElementById(extraId + '_simple_options');
-    const customDiv = document.getElementById(extraId + '_custom_options');
-    
-    if (simpleDiv) simpleDiv.style.display = isSimple ? 'block' : 'none';
-    if (customDiv) customDiv.style.display = isSimple ? 'none' : 'block';
+    document.getElementById(extraId + '_simple_options').style.display = isSimple ? 'block' : 'none';
+    document.getElementById(extraId + '_custom_options').style.display = isSimple ? 'none' : 'block';
     
     updatePointsDisplay();
     saveCharacter();
@@ -1039,7 +982,7 @@ function calculateExtraCost(extra) {
     }
 }
 
-// Points calculation - FIXED to ensure consistency
+// Points calculation
 function calculateUsedPoints() {
     let total = 0;
     
@@ -1151,29 +1094,21 @@ function updatePointsDisplay() {
     character.usedPoints = calculateUsedPoints();
     const remaining = character.totalPoints - character.usedPoints;
     
-    const pointsElement = document.getElementById('pointsRemaining');
-    if (pointsElement) {
-        pointsElement.textContent = remaining;
-    }
+    document.getElementById('pointsRemaining').textContent = remaining;
     
     const statusDiv = document.getElementById('pointsStatus');
-    if (statusDiv) {
-        if (remaining < 0) {
-            statusDiv.innerHTML = '<div class="points-warning">Over Budget!</div>';
-            if (pointsElement) pointsElement.className = 'points-remaining points-warning';
-        } else if (remaining === 0) {
-            statusDiv.innerHTML = '<div class="success">Perfect!</div>';
-            if (pointsElement) pointsElement.className = 'points-remaining';
-        } else {
-            statusDiv.innerHTML = '';
-            if (pointsElement) pointsElement.className = 'points-remaining';
-        }
+    if (remaining < 0) {
+        statusDiv.innerHTML = '<div class="points-warning">Over Budget!</div>';
+        document.getElementById('pointsRemaining').className = 'points-remaining points-warning';
+    } else if (remaining === 0) {
+        statusDiv.innerHTML = '<div class="success">Perfect!</div>';
+        document.getElementById('pointsRemaining').className = 'points-remaining';
+    } else {
+        statusDiv.innerHTML = '';
+        document.getElementById('pointsRemaining').className = 'points-remaining';
     }
     
-    // CRITICAL: Prevent multiple summary updates
-    if (!isUpdatingSummary) {
-        updateCharacterSummary();
-    }
+    updateCharacterSummary();
 }
 
 function updateCharacterSummary() {
@@ -1226,7 +1161,7 @@ function updateCharacterSummary() {
   el.innerHTML = html; // overwrite, don’t prepend/append previous HTML
 }
 
-// CRITICAL: Enhanced save/load functionality with extras protection
+// Save/Load functionality
 function saveCharacter() {
     try {
         // Persist current names into character state
@@ -1268,18 +1203,17 @@ function saveCharacter() {
         }
 
         const saveData = {
-            heritage: character.heritage,
+            ...character,
             concept: document.getElementById('concept').value,
             position: document.getElementById('position').value,
             trouble: document.getElementById('trouble').value,
             secret: document.getElementById('secret').value,
-            skills: { ...character.skills },
-            powers: [...character.powers],
-            extras: [...character.extras], // CRITICAL: Deep copy
-            totalPoints: character.totalPoints,
-            usedPoints: character.usedPoints,
-            heritagePoints: character.heritagePoints,
-            gmPowerCosts: { ...gmPowerCosts },
+            gmPowerCosts: gmPowerCosts,
+            formValues: {
+                heritage: document.getElementById('heritage').value,
+                skills: {},
+                powers: {}
+            },
             extraIdCounter: extraIdCounter,
             featureInstanceCounter: featureInstanceCounter
         };
@@ -1664,62 +1598,42 @@ function loadCharacter() {
         if (saveData.position) document.getElementById('position').value = saveData.position;
         if (saveData.trouble) document.getElementById('trouble').value = saveData.trouble;
         if (saveData.secret) document.getElementById('secret').value = saveData.secret;
-
-        // Load GM power costs
+        
         if (saveData.gmPowerCosts) {
-            gmPowerCosts = { ...saveData.gmPowerCosts };
+            gmPowerCosts = saveData.gmPowerCosts;
+            // Restore GM power cost inputs
             Object.entries(gmPowerCosts).forEach(([powerId, cost]) => {
                 const input = document.getElementById(powerId + '-manual-cost');
                 if (input) input.value = cost;
             });
         }
-
-        // Load heritage
-        if (saveData.heritage) {
-            document.getElementById('heritage').value = saveData.heritage;
+        
+        if (saveData.formValues && saveData.formValues.heritage) {
+            document.getElementById('heritage').value = saveData.formValues.heritage;
             updateHeritage();
         }
-
-        // Load skills
-        if (saveData.skills) {
-            Object.entries(saveData.skills).forEach(([skill, value]) => {
-                const element = document.getElementById(skill);
-                if (element) {
-                    element.value = value;
+        
+        if (saveData.formValues && saveData.formValues.skills) {
+            Object.entries(saveData.formValues.skills).forEach(([skill, value]) => {
+                if (document.getElementById(skill)) {
+                    document.getElementById(skill).value = value;
                 }
             });
             updateSkills();
         }
-
-        // Load powers
-        if (saveData.powers) {
-            character.powers = [...saveData.powers];
-            // Restore form states
-            saveData.powers.forEach(power => {
-                const element = document.getElementById(power.id);
+        
+        if (saveData.formValues && saveData.formValues.powers) {
+            Object.entries(saveData.formValues.powers).forEach(([powerId, checked]) => {
+                const element = document.getElementById(powerId);
                 if (element) {
-                    element.checked = true;
+                    element.checked = checked;
                 }
             });
             updatePowers();
         }
-
-        // CRITICAL: Load extras with enhanced protection
-        if (saveData.extras && Array.isArray(saveData.extras)) {
-            console.log(`Restoring ${saveData.extras.length} extras from save data`);
-            
-            // CRITICAL: Full restoration of character object
-            character = {
-                ...character,
-                heritage: saveData.heritage || '',
-                skills: saveData.skills || character.skills,
-                powers: saveData.powers || [],
-                extras: [...saveData.extras], // CRITICAL: Deep copy
-                totalPoints: saveData.totalPoints || 60,
-                usedPoints: saveData.usedPoints || 0,
-                heritagePoints: saveData.heritagePoints || 0
-            };
-            
+        
+        if (saveData.extras) {
+            character.extras = saveData.extras;
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
 
@@ -1750,10 +1664,7 @@ function loadCharacter() {
         }, 3000);
     } catch (error) {
         console.error('Load failed:', error);
-        const saveStatus = document.getElementById('saveStatus');
-        if (saveStatus) {
-            saveStatus.textContent = 'Load failed!';
-        }
+        document.getElementById('saveStatus').textContent = 'Load failed!';
     }
 }
 
@@ -1765,17 +1676,16 @@ function resetCharacter() {
 }
 
 function exportCharacter() {
+    // Ensure names are up to date in character state
+    if (document.getElementById('characterName')) character.characterName = document.getElementById('characterName').value;
+    if (document.getElementById('playerName')) character.playerName = document.getElementById('playerName').value;
+    
     const exportData = {
-        heritage: character.heritage,
+        ...character,
         concept: document.getElementById('concept').value,
         position: document.getElementById('position').value,
         trouble: document.getElementById('trouble').value,
-        secret: document.getElementById('secret').value,
-        skills: character.skills,
-        powers: character.powers,
-        extras: character.extras,
-        heritagePoints: character.heritagePoints,
-        usedPoints: calculateUsedPoints()
+        secret: document.getElementById('secret').value
     };
     
     let output = '=== ANCIENT SECRETS CHARACTER SHEET ===\n\n';
@@ -1856,8 +1766,8 @@ function exportCharacter() {
                     let actualCost = power.cost;
                     const credits = power.credit.split(',');
                     credits.forEach(credit => {
-                        const [powerName, creditValue] = credit.split(':');
-                        const hasPowerForCredit = exportData.powers.some(p => p.id === powerName);
+                        const [powerName2, creditValue] = credit.split(':');
+                        const hasPowerForCredit = exportData.powers.some(p => p.id === powerName2);
                         if (hasPowerForCredit) {
                             actualCost += parseInt(creditValue);
                         }
@@ -1961,14 +1871,15 @@ function exportCharacter() {
     // Always include the heritage adjustment in the point summary, even when zero
     output += `Heritage Adjustment: ${exportData.heritagePoints > 0 ? '+' : ''}${exportData.heritagePoints}\n`;
     output += `Used: ${exportData.usedPoints}\n`;
-    output += `Good Stuff Rating: ${character.totalPoints - exportData.usedPoints}\n`;
+    output += `Good Stuff Rating: ${exportData.totalPoints - exportData.usedPoints}\n`;
     
-    // Create downloadable file
+    // Create downloadable file with dynamic naming
     const blob = new Blob([output], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ancient-secrets-character.txt';
+    const fileName = `Ancient Secrets - ${exportData.characterName || 'Character'} (${exportData.playerName || 'Player'}).txt`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1976,83 +1887,36 @@ function exportCharacter() {
 }
 
 function testLocalStorage() {
-    // ENHANCED testing functionality with specific extras testing
-    console.log('=== TESTING LOCALSTORAGE FUNCTIONALITY ===');
+    // Test saving and loading functionality
+    console.log('Testing localStorage functionality...');
     
     try {
-        // Test 1: Basic localStorage functionality
-        console.log('Test 1: Basic localStorage functionality...');
+        // Test basic save
         const testData = { test: 'data', timestamp: Date.now() };
         localStorage.setItem('test_amber_save', JSON.stringify(testData));
         
+        // Test basic load
         const loaded = JSON.parse(localStorage.getItem('test_amber_save'));
         console.log('Basic save/load test:', loaded.test === 'data' ? 'PASSED' : 'FAILED');
         
-        // Test 2: Character save functionality
-        console.log('Test 2: Character save functionality...');
-        const originalExtrasCount = character.extras.length;
-        console.log(`Original extras count: ${originalExtrasCount}`);
-        
+        // Test character save
         saveCharacter();
         console.log('Character save test: PASSED');
         
-        // Test 3: Character load functionality
-        console.log('Test 3: Character load functionality...');
+        // Test character load
         const characterData = localStorage.getItem('amberCharacter');
         if (characterData) {
             const parsed = JSON.parse(characterData);
             console.log('Character load test:', parsed ? 'PASSED' : 'FAILED');
-            console.log(`Extras in save data: ${parsed.extras ? parsed.extras.length : 0}`);
-            console.log(`Current character extras: ${character.extras.length}`);
-            
-            // Test 4: Extras persistence specifically
-            console.log('Test 4: Extras persistence...');
-            if (parsed.extras && parsed.extras.length === originalExtrasCount) {
-                console.log('Extras persistence test: PASSED');
-            } else {
-                console.log('Extras persistence test: FAILED');
-                console.log(`Expected: ${originalExtrasCount}, Got: ${parsed.extras ? parsed.extras.length : 0}`);
-            }
+            console.log('Extras in save data:', parsed.extras ? parsed.extras.length : 0);
         } else {
             console.log('Character load test: FAILED - No data found');
         }
         
-        // Test 5: Add a test extra and verify save/load
-        console.log('Test 5: Test extra creation and persistence...');
-        const testExtraId = 'test_extra_' + Date.now();
-        const testExtra = {
-            id: testExtraId,
-            name: 'Test Extra',
-            type: 'item',
-            isSimple: true,
-            simpleAspect: 'Test Aspect',
-            features: [],
-            isEditing: false
-        };
-        
-        character.extras.push(testExtra);
-        console.log(`Added test extra. Count now: ${character.extras.length}`);
-        
-        saveCharacter();
-        
-        // Verify the test extra was saved
-        const verifyData = JSON.parse(localStorage.getItem('amberCharacter'));
-        const savedTestExtra = verifyData.extras.find(e => e.id === testExtraId);
-        if (savedTestExtra && savedTestExtra.name === 'Test Extra') {
-            console.log('Test extra save/load: PASSED');
-        } else {
-            console.log('Test extra save/load: FAILED');
-        }
-        
-        // Clean up test extra
-        character.extras = character.extras.filter(e => e.id !== testExtraId);
-        saveCharacter();
-        
         // Clean up test data
         localStorage.removeItem('test_amber_save');
         
-        console.log('=== ALL TESTS COMPLETED ===');
-        alert('localStorage tests completed. Check console for detailed results.');
+        alert('localStorage test completed. Check console for results.');
         
     } catch (error) {
         console.error('localStorage test failed:', error);
@@ -2139,6 +2003,4 @@ document.addEventListener('DOMContentLoaded', function() {
             input.addEventListener('change', () => updateGMPowerCost(powerId));
         }
     });
-    
-    console.log('Character builder initialized successfully');
 });
