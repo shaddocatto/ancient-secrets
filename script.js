@@ -1,19 +1,19 @@
 /* =========================
-   Amber Character Builder — single-file script.js (repaired)
+   Amber Character Builder — single-file script.js (Manage Characters + Import fixed)
    ========================= */
 
 /* -------------------------
    Config / Storage Keys
    ------------------------- */
-const STORAGE_CHARACTERS = "amber:characters:v1";   // map: { [name]: character }
+const STORAGE_CHARACTERS = "amber:characters:v1";   // map: { [name]: characterObj }
 const STORAGE_CURRENT    = "amber:currentName:v1";  // string: current character name
 
 /* -------------------------
    State
    ------------------------- */
-let currentCharacter = null;  // the live/edited character object
-let currentName = null;       // string name key
-let els = {};                 // cache for DOM els
+let currentCharacter = null; // the live, editable character
+let currentName = null;      // the name (key) of current character
+const els = {};              // DOM element cache
 
 /* -------------------------
    Utilities
@@ -22,7 +22,8 @@ function isObject(v){ return v && typeof v === "object" && !Array.isArray(v); }
 function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g,"&amp;").replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
 }
 function cryptoRandomId() {
   try {
@@ -33,16 +34,18 @@ function cryptoRandomId() {
   }
 }
 
-/* Deep merge that preserves arrays of items by stable id when present */
+/* Deep merge that tries to match array items by stable key (id or name) */
 function deepMerge(target, source) {
   if (Array.isArray(target) && Array.isArray(source)) {
     const byKey = new Map();
     const keyOf = (it) => (it && (it.id ?? it.name)) || null;
 
+    // seed with target
     target.forEach(it => {
       const k = keyOf(it);
       byKey.set(k || cryptoRandomId(), it);
     });
+    // merge/append from source
     source.forEach(it => {
       const k = keyOf(it);
       if (k && byKey.has(k)) {
@@ -63,16 +66,16 @@ function deepMerge(target, source) {
 }
 
 /* -------------------------
-   Default Character Template
+   Defaults
    ------------------------- */
 function defaultCharacter(name = "Untitled") {
   return {
     name,
-    totalPoints: 100,        // adjust as needed
-    heritage: null,          // "Amber" | "Chaos" | ...
-    skills: [],              // [{id,name,rating,costOverride}]
-    powers: [],              // [{id,name,baseCost,advanced,advancedCost,includesCredit,discounts}]
-    extras: [],              // [{id,type,cost,data:{...}}]
+    totalPoints: 100,     // adjust if your guide specifies a different default
+    heritage: null,       // "Amber" | "Chaos" | etc.
+    skills: [],           // [{id,name,rating,costOverride}]
+    powers: [],           // [{id,name,baseCost,advanced,advancedCost,includesCredit,discounts}]
+    extras: [],           // [{id,type,cost,data:{details}}]
     notes: "",
   };
 }
@@ -97,7 +100,7 @@ function setCurrentName(name) {
   try { localStorage.setItem(STORAGE_CURRENT, name); } catch {}
 }
 
-/* Debounced save of only the current character back into the characters map */
+/* Debounced save of current only */
 let saveTimer = null;
 function saveCurrentDebounced(delay=400) {
   clearTimeout(saveTimer);
@@ -111,7 +114,7 @@ function saveCurrentNow() {
 }
 
 /* -------------------------
-   Point Math — single source of truth
+   Points — single source of truth
    ------------------------- */
 function computePointSummary(char) {
   const total = Number(char.totalPoints ?? 0);
@@ -127,7 +130,6 @@ function computePointSummary(char) {
 
   return { total, skillsCost, powersCost, extrasCost, heritageAdj, netSpent, remaining, goodStuff, badStuff };
 }
-
 function calcSkillsCost(char) {
   return (char.skills || []).reduce((sum, s) => {
     const c = Number(s.costOverride ?? s.rating ?? 0);
@@ -138,10 +140,10 @@ function calcPowersCost(char) {
   return (char.powers || []).reduce((sum, p) => {
     const base = Number(p.baseCost ?? 0);
     const adv  = p.advanced ? Number(p.advancedCost ?? 0) : 0;
-    const includes = Number(p.includesCredit ?? 0);
-    const discounts = Number(p.discounts ?? 0);
+    const includes = Number(p.includesCredit ?? 0); // credits for included base
+    const discounts = Number(p.discounts ?? 0);     // other discounts
     const subtotal = base + adv - includes - discounts;
-    return sum + Math.max(0, subtotal);
+    return sum + Math.max(0, subtotal);             // clamp if needed by your rules
   }, 0);
 }
 function calcExtrasCost(char) {
@@ -151,9 +153,9 @@ function calcExtrasCost(char) {
   }, 0);
 }
 function calcHeritageAdjustments(char) {
-  // Example credits (negative = credit). Adjust to match your rules.
-  const h = (char.heritage || "").toLowerCase();
+  // Example credits (negative means credit). Adjust to your rulebook.
   let adj = 0;
+  const h = (char.heritage || "").toLowerCase();
   if (h === "amber") {
     const hasPattern = (char.powers || []).some(p => /pattern/i.test(p.name || ""));
     if (hasPattern) adj -= 50; // example
@@ -166,14 +168,14 @@ function calcHeritageAdjustments(char) {
 }
 
 /* -------------------------
-   Rendering — Overlay / Footer / Extras
+   DOM Cache (matches YOUR markup)
    ------------------------- */
 function cacheEls() {
   els.overlay     = document.getElementById("overlay-summary");
   els.footer      = document.getElementById("footer-summary");
   els.extras      = document.getElementById("extras-container");
 
-  // Manage Characters
+  // Manage Characters section (as provided)
   els.charSelect  = document.getElementById("characterSelect");
   els.btnNew      = document.getElementById("newCharacterBtn");
   els.btnImport   = document.getElementById("importCharacterBtn");
@@ -182,6 +184,9 @@ function cacheEls() {
   els.importInput = document.getElementById("importFile");
 }
 
+/* -------------------------
+   Rendering — Overlay / Footer / Extras
+   ------------------------- */
 function renderOverlay(char) {
   if (!els.overlay) return;
   const s = computePointSummary(char);
@@ -194,7 +199,6 @@ function renderOverlay(char) {
     </div>
   `;
 }
-
 function renderFooter(char) {
   if (!els.footer) return;
   const s = computePointSummary(char);
@@ -207,13 +211,12 @@ function renderFooter(char) {
     </div>
   `;
 }
-
 function renderExtras(char) {
   if (!els.extras) return;
   const extras = char.extras || [];
   els.extras.innerHTML = extras.map(ex => {
     const id = ex.id || cryptoRandomId();
-    ex.id = id;
+    ex.id = id; // ensure stable id for merge/persist
     const cost = Number(ex.cost ?? 0);
     const type = ex.type || "custom";
     const details = ex.data?.details || "";
@@ -233,7 +236,7 @@ function renderExtras(char) {
     `;
   }).join("");
 
-  // Wire inputs (debounced save; do not re-render per keystroke)
+  // Wire inputs (debounced save; DO NOT re-render per keystroke to keep focus)
   els.extras.querySelectorAll(".extra").forEach(node => {
     const id = node.getAttribute("data-id");
     const ex = extras.find(e => e.id === id);
@@ -260,7 +263,7 @@ function renderExtras(char) {
 }
 
 /* -------------------------
-   Manage Characters — List, New, Save, Delete, Switch
+   Manage Characters — Dropdown/List + Actions
    ------------------------- */
 function ensureNameUnique(base, map) {
   if (!map[base]) return base;
@@ -268,7 +271,6 @@ function ensureNameUnique(base, map) {
   while (map[`${base} ${i}`]) i++;
   return `${base} ${i}`;
 }
-
 function renderManageList() {
   if (!els.charSelect) return;
   const map = loadAllCharacters();
@@ -279,58 +281,39 @@ function renderManageList() {
     `<option value="${escapeHtml(n)}"${n===active ? " selected":""}>${escapeHtml(n)}</option>`
   ).join("");
 
-  // When user selects a different character
-  els.charSelect.onchange = () => {
-    const name = els.charSelect.value;
-    switchCharacter(name);
-  };
+  // Make sure the select reflects current
+  if (active && names.includes(active)) {
+    els.charSelect.value = active;
+  }
 }
-
 function newCharacter() {
   const map = loadAllCharacters();
-  const name = ensureNameUnique("Untitled", map);
-  const fresh = defaultCharacter(name);
-  map[name] = fresh;
+  const base = "Untitled";
+  const unique = ensureNameUnique(base, map);
+  const fresh = defaultCharacter(unique);
+  map[unique] = fresh;
   saveAllCharacters(map);
-  setCurrentName(name);
-  loadIntoEditor(fresh, name);
+  setCurrentName(unique);
+  loadIntoEditor(fresh, unique);
   renderManageList();
 }
-
-function saveCharacter() {
-  if (!currentName || !currentCharacter) return;
-  // sync character's internal name with the key
-  currentCharacter.name = currentName;
-
-  const map = loadAllCharacters();
-  // Merge with any stored version to avoid accidental field loss
-  const stored = map[currentName] || {};
-  map[currentName] = deepMerge(stored, currentCharacter);
-  saveAllCharacters(map);
-
-  renderManageList();
-}
-
 function deleteCharacter() {
   if (!currentName) return;
   const map = loadAllCharacters();
   if (!map[currentName]) return;
 
-  // Simple confirm UX; adjust if you have a modal
-  const ok = confirm(`Delete "${currentName}"? This cannot be undone.`);
-  if (!ok) return;
+  if (!confirm(`Delete "${currentName}"? This cannot be undone.`)) return;
 
   delete map[currentName];
   saveAllCharacters(map);
 
-  // Pick another character if any exist
-  const names = Object.keys(map);
+  const names = Object.keys(map).sort((a,b)=>a.localeCompare(b));
   if (names.length) {
     const next = names[0];
     setCurrentName(next);
     loadIntoEditor(map[next], next);
   } else {
-    // Start fresh
+    // start fresh if none left
     const fresh = defaultCharacter("Untitled");
     const unique = ensureNameUnique(fresh.name, map);
     fresh.name = unique;
@@ -341,7 +324,6 @@ function deleteCharacter() {
   }
   renderManageList();
 }
-
 function switchCharacter(name) {
   const map = loadAllCharacters();
   const data = map[name];
@@ -352,18 +334,28 @@ function switchCharacter(name) {
 }
 
 /* -------------------------
-   Import JSON (e.g., Jericho)
+   Import / Export
    ------------------------- */
+function sanitizeCharacter(raw) {
+  const safe = isObject(raw) ? { ...raw } : {};
+  safe.skills = Array.isArray(safe.skills) ? safe.skills : [];
+  safe.powers = Array.isArray(safe.powers) ? safe.powers : [];
+  safe.extras = Array.isArray(safe.extras) ? safe.extras : [];
+  return safe;
+}
 function importCharacterJSON(json) {
   const inbound = sanitizeCharacter(json);
+  // Never trust serialized totals
   delete inbound.usedPoints;
 
-  // Determine a name for the imported character
-  const baseName = inbound.name && String(inbound.name).trim() ? inbound.name.trim() : "Imported";
+  const baseName = inbound.name && String(inbound.name).trim()
+    ? String(inbound.name).trim()
+    : "Imported";
+
   const map = loadAllCharacters();
   const uniqueName = ensureNameUnique(baseName, map);
 
-  // Merge with default to ensure shape completeness
+  // Merge with defaults for completeness
   const merged = deepMerge(defaultCharacter(uniqueName), inbound);
 
   map[uniqueName] = merged;
@@ -373,68 +365,11 @@ function importCharacterJSON(json) {
   loadIntoEditor(merged, uniqueName);
   renderManageList();
 }
-
-function sanitizeCharacter(raw) {
-  const safe = isObject(raw) ? { ...raw } : {};
-  safe.skills = Array.isArray(safe.skills) ? safe.skills : [];
-  safe.powers = Array.isArray(safe.powers) ? safe.powers : [];
-  safe.extras = Array.isArray(safe.extras) ? safe.extras : [];
-  return safe;
-}
-
-/* -------------------------
-   Editor Load/Render
-   ------------------------- */
-function loadIntoEditor(data, name) {
-  // Deep merge into default to avoid missing fields; DO NOT trust serialized totals
-  const merged = deepMerge(defaultCharacter(name), sanitizeCharacter(data));
-  currentCharacter = merged;
-  currentName = name;
-
-  // Render UI sections
-  renderOverlay(currentCharacter);
-  renderFooter(currentCharacter);
-  renderExtras(currentCharacter);
-
-  // Persist selection
-  saveCurrentNow();
-}
-
-/* -------------------------
-   Wiring / Init
-   ------------------------- */
-function wireManageButtons() {
-  if (els.btnNew)    els.btnNew.addEventListener("click", newCharacter);
-  if (els.btnSave)   {/* you don’t have a Save button — saving can happen on edits or on New/Import */}
-  if (els.btnDelete) els.btnDelete.addEventListener("click", deleteCharacter);
-  if (els.btnImport) els.btnImport.addEventListener("click", () => els.importInput.click());
-  if (els.btnExport) els.btnExport.addEventListener("click", exportCharacterJSON);
-}
-
-function wireImportInput() {
-  if (!els.importInput) return;
-  els.importInput.addEventListener("change", async (e) => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    try {
-      const text = await f.text();
-      const json = JSON.parse(text);
-      importCharacterJSON(json);
-    } catch (err) {
-      console.error("Invalid JSON import", err);
-      alert("Invalid JSON file.");
-    } finally {
-      e.target.value = ""; // allow re-importing same file
-    }
-  });
-}
-
 function exportCharacterJSON() {
   if (!currentCharacter) return;
   const data = JSON.stringify(currentCharacter, null, 2);
   const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement("a");
   a.href = url;
   a.download = `${currentName || "character"}.json`;
@@ -442,19 +377,88 @@ function exportCharacterJSON() {
   URL.revokeObjectURL(url);
 }
 
+/* -------------------------
+   Editor Load
+   ------------------------- */
+function loadIntoEditor(data, name) {
+  // Ensure stable ids in arrays like extras so they persist across merges
+  const cleaned = sanitizeCharacter(data);
+  ["skills","powers","extras"].forEach(arrKey => {
+    if (Array.isArray(cleaned[arrKey])) {
+      cleaned[arrKey] = cleaned[arrKey].map(item => {
+        if (isObject(item) && !item.id) return { id: cryptoRandomId(), ...item };
+        return item;
+      });
+    }
+  });
+
+  // Deep merge into defaults; DO NOT carry any stale totals
+  const merged = deepMerge(defaultCharacter(name), cleaned);
+
+  currentCharacter = merged;
+  currentName = name;
+
+  // Render sections
+  renderOverlay(currentCharacter);
+  renderFooter(currentCharacter);
+  renderExtras(currentCharacter);
+
+  // Persist selection+data
+  saveCurrentNow();
+}
+
+/* -------------------------
+   Wiring / Init
+   ------------------------- */
+function wireManage() {
+  if (els.btnNew)    els.btnNew.addEventListener("click", newCharacter);
+  if (els.btnDelete) els.btnDelete.addEventListener("click", deleteCharacter);
+  if (els.btnExport) els.btnExport.addEventListener("click", exportCharacterJSON);
+
+  // Import: open file picker
+  if (els.btnImport && els.importInput) {
+    els.btnImport.addEventListener("click", () => els.importInput.click());
+  }
+  // File input change → read + import
+  if (els.importInput) {
+    els.importInput.addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      try {
+        const text = await f.text();
+        const json = JSON.parse(text);
+        importCharacterJSON(json);
+      } catch (err) {
+        console.error("Invalid JSON import:", err);
+        alert("That file doesn't look like valid character JSON.");
+      } finally {
+        // allow selecting the same file again later
+        e.target.value = "";
+      }
+    });
+  }
+
+  // Change selection in dropdown → switch characters
+  if (els.charSelect) {
+    els.charSelect.addEventListener("change", () => {
+      const name = els.charSelect.value;
+      if (name && name !== currentName) switchCharacter(name);
+    });
+  }
+}
+
 function init() {
   cacheEls();
-  wireManageButtons();
-  wireImportInput();
+  wireManage();
 
-  // Boot: load map and pick current or create one
+  // Boot: choose current or create one
   const map = loadAllCharacters();
   let name = getCurrentName();
+
   if (name && map[name]) {
     loadIntoEditor(map[name], name);
   } else {
-    // If any characters exist, pick the first; else create a fresh one
-    const names = Object.keys(map);
+    const names = Object.keys(map).sort((a,b)=>a.localeCompare(b));
     if (names.length) {
       name = names[0];
       setCurrentName(name);
@@ -472,7 +476,8 @@ function init() {
   renderManageList();
 }
 
+// Start once DOM is ready
 document.addEventListener("DOMContentLoaded", init);
 
-/* Expose import for programmatic use if needed */
+/* Optional: expose import for programmatic calls */
 window.importCharacterJSON = importCharacterJSON;
