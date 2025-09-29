@@ -92,15 +92,20 @@ h1 {
     top: 20px;
     right: 20px;
     z-index: 1000;
+    /* Arrange contents vertically and center them for a cleaner overlay */
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    gap: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 .points-display h3 {
     margin: 0;
     color: #EFBF04;
-    flex: 1 1 auto;
+    /* Ensure heading spans full width and centers text */
+    width: 100%;
+    text-align: center;
 }
 .points-remaining {
     font-size: 1.8em;
@@ -120,7 +125,9 @@ h1 {
 .save-status {
     font-size: 0.8em;
     color: #888;
-    flex-basis: 100%;
+    width: 100%;
+    /* Place the save status at the bottom of the Good Stuff overlay */
+    text-align: center;
     margin-top: 5px;
 }
 
@@ -316,6 +323,28 @@ h1 {
     background-color: #515151;
 }
 
+/*
+ * Features grid
+ *
+ * When customizing a complex extra, the list of available features can become
+ * quite long. To make better use of horizontal space and avoid an overly tall
+ * single column, wrap feature entries in a grid. By default the grid is a
+ * single column so it stacks neatly on narrow screens. On medium and larger
+ * screens the grid becomes two columns to split the list into two shorter
+ * columns.
+ */
+.features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+@media (min-width: 600px) {
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* Buttons */
 button {
     background-color: #3a3a3a;
@@ -399,4 +428,42 @@ input[type="checkbox"] {
 ::-webkit-scrollbar-thumb {
     background-color: #444;
     border-radius: 4px;
+}
+
+/* ----------------------------------------------------- */
+/* Character management layout (new multi-character support) */
+#characterManagement {
+    margin-bottom: 20px;
+}
+
+#characterManagement .character-management-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#characterManagement select {
+    padding: 5px;
+    min-width: 150px;
+    background-color: #222;
+    color: #eee;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+#characterManagement button {
+    padding: 5px 10px;
+    font-size: 0.9rem;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#characterManagement button:hover {
+    background-color: #444;
 }

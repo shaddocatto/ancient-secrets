@@ -18,6 +18,20 @@
             <div class="save-status" id="saveStatus">Auto-saving...</div>
         </div>
 
+        <!-- Character management: load, save, import/export multiple characters -->
+        <div class="section" id="characterManagement">
+            <h2>Manage Characters</h2>
+            <div class="character-management-row">
+                <label for="characterSelect">Current Character:</label>
+                <select id="characterSelect"></select>
+                <button id="newCharacterBtn" type="button">New</button>
+                <button id="importCharacterBtn" type="button">Import</button>
+                <button id="exportJsonBtn" type="button">Export JSON</button>
+                <button id="deleteCharacterBtn" type="button">Delete</button>
+                <input type="file" id="importFile" accept=".json" style="display:none">
+            </div>
+        </div>
+
         <!-- Character and Player Info -->
         <div class="section">
             <h2>Character Information</h2>
@@ -78,49 +92,41 @@
                     <label for="strength">Strength</label>
                     <div class="skill-description">Physique, athletics, toughness, hand-to-hand combat</div>
                     <input type="number" id="strength" min="-3" max="12" value="0" onchange="updateSkills()">
-                    <div class="skill-cost" id="strengthCost">Cost: 0 points</div>
                 </div>
                 <div class="skill-item">
                     <label for="warfare">Warfare</label>
                     <div class="skill-description">Leadership, tactics, strategy, vehicles, riding, weapons combat</div>
                     <input type="number" id="warfare" min="-3" max="12" value="0" onchange="updateSkills()">
-                    <div class="skill-cost" id="warfareCost">Cost: 0 points</div>
                 </div>
                 <div class="skill-item">
                     <label for="psyche">Psyche</label>
                     <div class="skill-description">Focus, discipline, will, empathy, mystical power and potential</div>
                     <input type="number" id="psyche" min="-3" max="12" value="0" onchange="updateSkills()">
-                    <div class="skill-cost" id="psycheCost">Cost: 0 points</div>
                 </div>
                 <div class="skill-item">
                     <label for="endurance">Endurance</label>
                     <div class="skill-description">Resilience, tenacity, physical/mental reserves, stress</div>
                     <input type="number" id="endurance" min="-3" max="12" value="0" onchange="updateSkills()">
-                    <div class="skill-cost" id="enduranceCost">Cost: 0 points</div>
                 </div>
                 <div class="skill-item">
                     <label for="status">Status</label>
                     <div class="skill-description">Contacts, charm, convincing, reputation, resources, dominion</div>
                     <input type="number" id="status" min="-3" max="12" value="0" onchange="updateSkills()">
-                    <div class="skill-cost" id="statusCost">Cost: 0 points</div>
                 </div>
                 <div class="skill-item">
                     <label for="intrigue">Intrigue</label>
                     <div class="skill-description">Deceit, espionage, secrets, manipulation, leverage, skulduggery</div>
                     <input type="number" id="intrigue" min="-3" max="12" value="0" onchange="updateSkills()">
-                    <div class="skill-cost" id="intrigueCost">Cost: 0 points</div>
                 </div>
                 <div class="skill-item">
                     <label for="hunting">Hunting</label>
                     <div class="skill-description">Train Animal, survival, tracking, riding, ambush, hunting weapons</div>
                     <input type="number" id="hunting" min="-3" max="12" value="0" onchange="updateSkills()">
-                    <div class="skill-cost" id="huntingCost">Cost: 0 points</div>
                 </div>
                 <div class="skill-item">
                     <label for="lore">Lore</label>
                     <div class="skill-description">Knowledge, occult understanding, crafting, engineering, medicine</div>
                     <input type="number" id="lore" min="-3" max="12" value="0" onchange="updateSkills()">
-                    <div class="skill-cost" id="loreCost">Cost: 0 points</div>
                 </div>
             </div>
         </div>
