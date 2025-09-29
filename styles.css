@@ -20,10 +20,12 @@ html, body {
 }
 
 .container {
-    width: 90%;
-    max-width: 1000px;
+    width: 95%;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 15px;
+    /* Provide space for the floating Good Stuff bar at the top */
+    padding-top: 100px;
 }
 
 h1 {
@@ -41,9 +43,9 @@ h1 {
 
 /* Section blocks */
 .section {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     background-color: #1e1e1e;
-    padding: 15px;
+    padding: 12px;
     border-radius: 6px;
 }
 .section h2 {
@@ -83,18 +85,27 @@ h1 {
 /* Points display */
 .points-display {
     background-color: #1e1e1e;
-    padding: 12px;
+    padding: 10px 15px;
     border-radius: 6px;
-    margin-bottom: 25px;
+    /* Float above other UI elements so the point total is always visible */
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    /* Arrange contents vertically and center them for a cleaner overlay */
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 .points-display h3 {
     margin: 0;
     color: #EFBF04;
-    flex: 1 1 auto;
+    /* Ensure heading spans full width and centers text */
+    width: 100%;
+    text-align: center;
 }
 .points-remaining {
     font-size: 1.8em;
@@ -114,20 +125,51 @@ h1 {
 .save-status {
     font-size: 0.8em;
     color: #888;
-    flex-basis: 100%;
+    width: 100%;
+    /* Place the save status at the bottom of the Good Stuff overlay */
+    text-align: center;
     margin-top: 5px;
 }
 
 /* Skills */
+/*
+ * Skills grid
+ *
+ * Use a responsive grid for the skill list. On smaller screens skills
+ * collapse down to one or two columns, while on wider desktop views
+ * there are four columns. This prevents the skills from spanning
+ * the full width and makes better use of horizontal space.
+ */
 .skill-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 10px;
 }
+
+/* two columns on medium screens */
+@media (min-width: 600px) {
+    .skill-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* three columns on large screens */
+@media (min-width: 900px) {
+    .skill-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* four columns on extra‑wide screens */
+@media (min-width: 1200px) {
+    .skill-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
 .skill-item {
-    flex: 1 1 calc(50% - 15px);
     background-color: #2e2e2e;
-    padding: 10px;
+    padding: 8px;
     border-radius: 4px;
 }
 .skill-item label {
@@ -148,15 +190,36 @@ h1 {
 }
 
 /* Powers */
+/*
+ * Powers grid
+ *
+ * Arrange power categories in a responsive grid similar to skills. On
+ * narrow screens powers stack vertically. On medium screens there are
+ * two columns, and on larger desktops there are three columns. This
+ * improves the use of horizontal space and avoids powers stretching
+ * across the full width.
+ */
 .powers-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 10px;
 }
+
+@media (min-width: 600px) {
+    .powers-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .powers-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 .power-category {
-    flex: 1 1 calc(50% - 15px);
     background-color: #2e2e2e;
-    padding: 10px;
+    padding: 8px;
     border-radius: 4px;
 }
 .power-category h3 {
@@ -175,7 +238,7 @@ h1 {
     color: #f5f5f5;
 }
 .power-item .power-cost {
-    background-color: #444;
+    background-color: #333;
     color: #EFBF04;
     padding: 2px 6px;
     border-radius: 3px;
@@ -183,12 +246,28 @@ h1 {
     margin-right: 6px;
     min-width: 28px;
     text-align: center;
+    /* Prevent users from confusing the cost label with an editable field */
+    pointer-events: none;
 }
 .power-description {
     font-size: 0.75em;
     color: #888;
     margin-left: 22px;
     margin-top: 3px;
+}
+
+/* Style for manual GM cost inputs on ancient powers.  These fields should look
+   distinct from skill/point inputs so players understand they are editing
+   the GM-determined cost and not a rank or level. */
+.gm-cost-input {
+    width: 60px;
+    margin-left: 8px;
+    padding: 4px;
+    background-color: #2e2e2e;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #f5f5f5;
+    font-size: 0.8em;
 }
 .power-item.disabled {
     opacity: 0.5;
@@ -212,7 +291,7 @@ h1 {
     background-color: #2e2e2e;
     padding: 8px;
     border-radius: 4px;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 .feature-instance-header {
     display: flex;
@@ -242,6 +321,28 @@ h1 {
 }
 .add-instance-btn:hover {
     background-color: #515151;
+}
+
+/*
+ * Features grid
+ *
+ * When customizing a complex extra, the list of available features can become
+ * quite long. To make better use of horizontal space and avoid an overly tall
+ * single column, wrap feature entries in a grid. By default the grid is a
+ * single column so it stacks neatly on narrow screens. On medium and larger
+ * screens the grid becomes two columns to split the list into two shorter
+ * columns.
+ */
+.features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+@media (min-width: 600px) {
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 /* Buttons */
@@ -327,4 +428,42 @@ input[type="checkbox"] {
 ::-webkit-scrollbar-thumb {
     background-color: #444;
     border-radius: 4px;
+}
+
+/* ----------------------------------------------------- */
+/* Character management layout (new multi-character support) */
+#characterManagement {
+    margin-bottom: 20px;
+}
+
+#characterManagement .character-management-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#characterManagement select {
+    padding: 5px;
+    min-width: 150px;
+    background-color: #222;
+    color: #eee;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+#characterManagement button {
+    padding: 5px 10px;
+    font-size: 0.9rem;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#characterManagement button:hover {
+    background-color: #444;
 }
