@@ -467,3 +467,12 @@ input[type="checkbox"] {
 #characterManagement button:hover {
     background-color: #444;
 }
+
+/* instead of display:none */
+#importFile {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}

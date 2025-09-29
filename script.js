@@ -1,5 +1,5 @@
 /* =========================
-   Amber Character Builder — single-file script.js (Manage Characters + Import fixed)
+   Amber Character Builder — single-file script.js (Import hardened)
    ========================= */
 
 /* -------------------------
@@ -189,32 +189,44 @@ function cacheEls() {
    ------------------------- */
 function renderOverlay(char) {
   if (!els.overlay) return;
-  const s = computePointSummary(char);
-  els.overlay.innerHTML = `
-    <div class="points">
-      <div><strong>Total:</strong> ${s.total}</div>
-      <div><strong>Spent:</strong> ${s.netSpent}</div>
-      <div><strong>Good Stuff:</strong> ${s.goodStuff}</div>
-      ${s.badStuff ? `<div><strong>Bad Stuff:</strong> ${s.badStuff}</div>` : ""}
-    </div>
-  `;
+  els.overlay.innerHTML = pointsSummaryMarkup(char);
 }
+
 function renderFooter(char) {
   if (!els.footer) return;
-  const s = computePointSummary(char);
   els.footer.innerHTML = `
     <div class="summary">
-      <span>Total ${s.total}</span>
-      <span>Spent ${s.netSpent}</span>
-      <span>Good Stuff ${s.goodStuff}</span>
-      ${s.badStuff ? `<span>Bad Stuff ${s.badStuff}</span>` : ""}
+      ${pointsSummaryMarkup(char)
+        // strip outer wrapper to fit footer inline look (optional)
+        .replace(/^<div class="points">|<\/div>$/g, "")
+        .replaceAll("<div>", "<span>").replaceAll("</div>", "</span>")
+      }
     </div>
   `;
 }
+
+// 🔁 Replace your entire renderExtras() with this:
+
 function renderExtras(char) {
   if (!els.extras) return;
-  const extras = char.extras || [];
-  els.extras.innerHTML = extras.map(ex => {
+  const extras = Array.isArray(char.extras) ? char.extras : [];
+
+  // Build a compact summary of ALL extras (not just 'Exceptional')
+  const summaryLines = extras.map(ex => {
+    const type = (ex.type || "custom").trim();
+    const cost = Number(ex.cost ?? 0);
+    const details = (ex.data && ex.data.details ? String(ex.data.details) : "").trim();
+
+    // Try to craft a helpful one-liner. If we know nothing else, show details snippet.
+    let info = details ? details : "";
+    // keep the summary short
+    if (info.length > 120) info = info.slice(0, 117) + "…";
+
+    return `<li><strong>${escapeHtml(type)}</strong> (${isFinite(cost) ? cost : 0})${info ? ` — ${escapeHtml(info)}` : ""}</li>`;
+  });
+
+  // Main editor (expanded cards)
+  const cardsHtml = extras.map(ex => {
     const id = ex.id || cryptoRandomId();
     ex.id = id; // ensure stable id for merge/persist
     const cost = Number(ex.cost ?? 0);
@@ -236,8 +248,46 @@ function renderExtras(char) {
     `;
   }).join("");
 
-  // Wire inputs (debounced save; DO NOT re-render per keystroke to keep focus)
-  els.extras.querySelectorAll(".extra").forEach(node => {
+  // Collapsed + Expanded UI (simple toggle; persists in localStorage)
+  const COLLAPSE_KEY = "amber:extras:collapsed:v1";
+  const collapsed = localStorage.getItem(COLLAPSE_KEY) === "1";
+
+  els.extras.innerHTML = `
+    <div class="extras-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+      <h3 style="margin:0;">Extras</h3>
+      <button id="toggleExtrasBtn" type="button">${collapsed ? "Expand" : "Collapse"}</button>
+    </div>
+
+    <div id="extrasCollapsed" style="${collapsed ? "" : "display:none"}">
+      ${
+        extras.length
+          ? `<ul style="margin-left:1rem;line-height:1.4;">${summaryLines.join("")}</ul>`
+          : `<em>No extras yet.</em>`
+      }
+    </div>
+
+    <div id="extrasExpanded" style="${collapsed ? "display:none" : ""}">
+      ${cardsHtml || `<em>No extras yet.</em>`}
+    </div>
+  `;
+
+  // Toggle wiring
+  const toggleBtn = document.getElementById("toggleExtrasBtn");
+  const collapsedEl = document.getElementById("extrasCollapsed");
+  const expandedEl  = document.getElementById("extrasExpanded");
+  if (toggleBtn && collapsedEl && expandedEl) {
+    toggleBtn.addEventListener("click", () => {
+      const nowCollapsed = expandedEl.style.display !== "none"; // if expanded is visible, we'll collapse
+      collapsedEl.style.display = nowCollapsed ? "" : "none";
+      expandedEl.style.display  = nowCollapsed ? "none" : "";
+      toggleBtn.textContent = nowCollapsed ? "Expand" : "Collapse";
+      localStorage.setItem(COLLAPSE_KEY, nowCollapsed ? "1" : "0");
+    });
+  }
+
+  // Wire inputs (debounced save; no re-render per keystroke to keep focus)
+  // Only add listeners when expanded exists
+  expandedEl?.querySelectorAll(".extra").forEach(node => {
     const id = node.getAttribute("data-id");
     const ex = extras.find(e => e.id === id);
     const typeEl = node.querySelector(".ex-type");
@@ -250,6 +300,7 @@ function renderExtras(char) {
     });
     costEl.addEventListener("input", () => {
       ex.cost = Number(costEl.value || 0);
+      // Keep Good/Bad Stuff live
       renderOverlay(currentCharacter);
       renderFooter(currentCharacter);
       saveCurrentDebounced();
@@ -334,7 +385,7 @@ function switchCharacter(name) {
 }
 
 /* -------------------------
-   Import / Export
+   Import / Export (HARDENED)
    ------------------------- */
 function sanitizeCharacter(raw) {
   const safe = isObject(raw) ? { ...raw } : {};
@@ -343,28 +394,43 @@ function sanitizeCharacter(raw) {
   safe.extras = Array.isArray(safe.extras) ? safe.extras : [];
   return safe;
 }
+
 function importCharacterJSON(json) {
-  const inbound = sanitizeCharacter(json);
-  // Never trust serialized totals
-  delete inbound.usedPoints;
+  try {
+    const inbound = sanitizeCharacter(json);
+    delete inbound.usedPoints; // never trust serialized totals
 
-  const baseName = inbound.name && String(inbound.name).trim()
-    ? String(inbound.name).trim()
-    : "Imported";
+    const baseName = inbound.name && String(inbound.name).trim()
+      ? String(inbound.name).trim()
+      : "Imported";
 
-  const map = loadAllCharacters();
-  const uniqueName = ensureNameUnique(baseName, map);
+    const map = loadAllCharacters();
+    const uniqueName = ensureNameUnique(baseName, map);
 
-  // Merge with defaults for completeness
-  const merged = deepMerge(defaultCharacter(uniqueName), inbound);
+    // Ensure stable ids inside arrays before merging
+    ["skills","powers","extras"].forEach(arrKey => {
+      if (Array.isArray(inbound[arrKey])) {
+        inbound[arrKey] = inbound[arrKey].map(item => {
+          if (isObject(item) && !item.id) return { id: cryptoRandomId(), ...item };
+          return item;
+        });
+      }
+    });
 
-  map[uniqueName] = merged;
-  saveAllCharacters(map);
+    const merged = deepMerge(defaultCharacter(uniqueName), inbound);
+    map[uniqueName] = merged;
+    saveAllCharacters(map);
 
-  setCurrentName(uniqueName);
-  loadIntoEditor(merged, uniqueName);
-  renderManageList();
+    setCurrentName(uniqueName);
+    loadIntoEditor(merged, uniqueName);
+    renderManageList();
+    console.info(`[Import] Imported as "${uniqueName}"`);
+  } catch (err) {
+    console.error("[Import] Failed to process JSON:", err);
+    alert("Sorry, we couldn't import that file. Check the console for details.");
+  }
 }
+
 function exportCharacterJSON() {
   if (!currentCharacter) return;
   const data = JSON.stringify(currentCharacter, null, 2);
@@ -377,34 +443,56 @@ function exportCharacterJSON() {
   URL.revokeObjectURL(url);
 }
 
+/* Robust file → JSON reader (handles more environments) */
+async function readFileAsText(file) {
+  if (!file) throw new Error("No file provided");
+  // Prefer File.text() if available
+  if (typeof file.text === "function") {
+    return await file.text();
+  }
+  // Fallback to FileReader
+  console.debug("[Import] Using FileReader fallback");
+  return await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = () => reject(fr.error || new Error("FileReader error"));
+    fr.readAsText(file);
+  });
+}
+
 /* -------------------------
    Editor Load
    ------------------------- */
 function loadIntoEditor(data, name) {
-  // Ensure stable ids in arrays like extras so they persist across merges
-  const cleaned = sanitizeCharacter(data);
-  ["skills","powers","extras"].forEach(arrKey => {
-    if (Array.isArray(cleaned[arrKey])) {
-      cleaned[arrKey] = cleaned[arrKey].map(item => {
-        if (isObject(item) && !item.id) return { id: cryptoRandomId(), ...item };
-        return item;
-      });
-    }
-  });
+  try {
+    // Ensure stable ids in arrays like extras so they persist across merges
+    const cleaned = sanitizeCharacter(data);
+    ["skills","powers","extras"].forEach(arrKey => {
+      if (Array.isArray(cleaned[arrKey])) {
+        cleaned[arrKey] = cleaned[arrKey].map(item => {
+          if (isObject(item) && !item.id) return { id: cryptoRandomId(), ...item };
+          return item;
+        });
+      }
+    });
 
-  // Deep merge into defaults; DO NOT carry any stale totals
-  const merged = deepMerge(defaultCharacter(name), cleaned);
+    // Deep merge into defaults; DO NOT carry any stale totals
+    const merged = deepMerge(defaultCharacter(name), cleaned);
 
-  currentCharacter = merged;
-  currentName = name;
+    currentCharacter = merged;
+    currentName = name;
 
-  // Render sections
-  renderOverlay(currentCharacter);
-  renderFooter(currentCharacter);
-  renderExtras(currentCharacter);
+    // Render sections
+    renderOverlay(currentCharacter);
+    renderFooter(currentCharacter);
+    renderExtras(currentCharacter);
 
-  // Persist selection+data
-  saveCurrentNow();
+    // Persist selection+data
+    saveCurrentNow();
+  } catch (err) {
+    console.error("[LoadIntoEditor] Failed:", err);
+    alert("There was a problem displaying that character. See console for details.");
+  }
 }
 
 /* -------------------------
@@ -417,22 +505,48 @@ function wireManage() {
 
   // Import: open file picker
   if (els.btnImport && els.importInput) {
-    els.btnImport.addEventListener("click", () => els.importInput.click());
+    els.btnImport.addEventListener("click", () => {
+      // Some browsers block programmatic clicks on display:none inputs.
+      // Ensure the input is not display:none; use visually-hidden styles instead (opacity:0).
+      // If it must be display:none, we'll also attach a delegated change listener below.
+      try {
+        els.importInput.click();
+      } catch (e) {
+        console.warn("[Import] Programmatic click failed, focusing input instead");
+        els.importInput.focus();
+      }
+    });
   }
-  // File input change → read + import
+
+  // File input change → read + import (robust)
   if (els.importInput) {
     els.importInput.addEventListener("change", async (e) => {
-      const f = e.target.files && e.target.files[0];
-      if (!f) return;
       try {
-        const text = await f.text();
-        const json = JSON.parse(text);
+        const f = e.target.files && e.target.files[0];
+        if (!f) {
+          console.warn("[Import] No file selected");
+          return;
+        }
+        console.info(`[Import] Reading file: ${f.name} (${f.type || "unknown type"})`);
+        const text = await readFileAsText(f);
+
+        // Strip UTF-8 BOM if present
+        const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
+
+        let json;
+        try {
+          json = JSON.parse(cleanText);
+        } catch (parseErr) {
+          console.error("[Import] JSON parse error:", parseErr, { preview: cleanText.slice(0, 200) });
+          alert("That file isn't valid JSON. (See console for details.)");
+          return;
+        }
         importCharacterJSON(json);
       } catch (err) {
-        console.error("Invalid JSON import:", err);
-        alert("That file doesn't look like valid character JSON.");
+        console.error("[Import] Unexpected error:", err);
+        alert("Import failed due to an unexpected error. See console for details.");
       } finally {
-        // allow selecting the same file again later
+        // Allow re-selecting the same file to re-trigger change event
         e.target.value = "";
       }
     });
@@ -445,10 +559,39 @@ function wireManage() {
       if (name && name !== currentName) switchCharacter(name);
     });
   }
+
+  // Extra safety: delegated change listener in case the input is replaced dynamically
+  document.addEventListener("change", async (evt) => {
+    const t = evt.target;
+    if (t && t.id === "importFile" && t.files && t.files[0]) {
+      // If primary listener didn't fire for any reason, handle it here too
+      try {
+        const text = await readFileAsText(t.files[0]);
+        const clean = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
+        importCharacterJSON(JSON.parse(clean));
+      } catch (err) {
+        console.error("[Import-delegated] Failed:", err);
+        alert("Import failed (delegated handler). See console for details.");
+      } finally {
+        t.value = "";
+      }
+    }
+  }, { capture: true });
+}
+
+function cacheElsAndWarnIfMissing() {
+  cacheEls();
+  // Helpful console hints if something isn't wired in HTML
+  if (!els.charSelect) console.warn('Missing #characterSelect');
+  if (!els.btnNew) console.warn('Missing #newCharacterBtn');
+  if (!els.btnImport) console.warn('Missing #importCharacterBtn');
+  if (!els.btnExport) console.warn('Missing #exportJsonBtn');
+  if (!els.btnDelete) console.warn('Missing #deleteCharacterBtn');
+  if (!els.importInput) console.warn('Missing #importFile');
 }
 
 function init() {
-  cacheEls();
+  cacheElsAndWarnIfMissing();
   wireManage();
 
   // Boot: choose current or create one
@@ -479,5 +622,5 @@ function init() {
 // Start once DOM is ready
 document.addEventListener("DOMContentLoaded", init);
 
-/* Optional: expose import for programmatic calls */
+/* Optional: expose import for programmatic calls (e.g., tests) */
 window.importCharacterJSON = importCharacterJSON;
