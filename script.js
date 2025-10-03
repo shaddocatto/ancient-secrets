@@ -1510,6 +1510,8 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Failed to initialize character builder. Check console for details.');
     }
 
+});
+
     // ============================================
     // IMPORT/EXPORT FUNCTIONS FOR MANAGE CHARACTERS SECTION
     // Add these to the end of your script.js file
@@ -1846,6 +1848,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     console.log('Import/Export functions loaded successfully');
-
-
-});
