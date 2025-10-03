@@ -9,6 +9,8 @@ window.addEventListener('error', function(e) {
 });
 
 let character = {
+    characterName: '',
+    playerName: '',
     heritage: '',
     concept: '',
     position: '',
@@ -34,6 +36,17 @@ let character = {
 let extraIdCounter = 0;
 let featureInstanceCounter = 0;
 let gmPowerCosts = {};
+
+function getCharNameEl() {
+    return document.getElementById('characterNameInput')
+        || document.getElementById('characterName')
+        || document.querySelector('[name="characterName"]');
+}
+function getPlayerNameEl() {
+    return document.getElementById('playerNameInput')
+        || document.getElementById('playerName')
+        || document.querySelector('[name="playerName"]');
+}
 
 // Heritage management
 function updateHeritage() {
@@ -1169,9 +1182,14 @@ function saveCharacter() {
         const troubleElement = document.getElementById('trouble');
         const secretElement = document.getElementById('secret');
         const heritageElement = document.getElementById('heritage');
+        const charNameEl = getCharNameEl();
+        const playerNameEl = getPlayerNameEl();
+
         
         const saveData = {
             ...character,
+            characterName: charNameEl ? charNameEl.value : (character.characterName || ''),
+            playerName: playerNameEl ? playerNameEl.value : (character.playerName || ''),
             concept: conceptElement ? conceptElement.value : '',
             position: positionElement ? positionElement.value : '',
             trouble: troubleElement ? troubleElement.value : '',
@@ -1252,6 +1270,19 @@ function loadCharacter() {
         if (saveData.secret) {
             const element = document.getElementById('secret');
             if (element) element.value = saveData.secret;
+        }
+
+        if (saveData.characterName || saveData.playerName) {
+            const charNameEl = getCharNameEl();
+            const playerNameEl = getPlayerNameEl();
+            if (charNameEl && saveData.characterName !== undefined) {
+                charNameEl.value = saveData.characterName;
+            }
+            if (playerNameEl && saveData.playerName !== undefined) {
+                playerNameEl.value = saveData.playerName;
+            }
+            character.characterName = saveData.characterName || '';
+            character.playerName = saveData.playerName || '';
         }
 
         if (saveData.gmPowerCosts) {
@@ -1346,6 +1377,8 @@ function exportCharacter() {
         };
         
         let output = '=== ANCIENT SECRETS CHARACTER SHEET ===\n\n';
+        output += `Character: ${exportData.characterName || ''}\n`;
+        output += `Player: ${exportData.playerName || ''}\n\n`;
         output += `Heritage: ${exportData.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
         if (exportData.heritagePoints !== 0) {
             output += ` (${exportData.heritagePoints > 0 ? '+' : ''}${exportData.heritagePoints} pts)`;
@@ -1521,6 +1554,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function exportCharacterJSON() {
         try {
             const exportData = {
+                characterName: getCharNameEl()?.value || character.characterName || '',
+                playerName: getPlayerNameEl()?.value || character.playerName || '',
                 heritage: character.heritage,
                 concept: document.getElementById('concept')?.value || '',
                 position: document.getElementById('position')?.value || '',
@@ -1607,6 +1642,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     usedPoints: 0,
                     heritagePoints: 0
                 };
+
+                // ---- Names (UI + memory)
+                const charNameEl = getCharNameEl();
+                const playerNameEl = getPlayerNameEl();
+
+                if (importedData.characterName !== undefined) {
+                    character.characterName = importedData.characterName || '';
+                    if (charNameEl) charNameEl.value = character.characterName;
+                }
+                if (importedData.playerName !== undefined) {
+                    character.playerName = importedData.playerName || '';
+                    if (playerNameEl) playerNameEl.value = character.playerName;
+                }
                 
                 // Import heritage
                 if (importedData.heritage) {
@@ -1743,9 +1791,41 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // ---- Register imported character for dropdowns / lists
+        try {
+            const listKey = 'ancientSecrets.characters';
+            const list = JSON.parse(localStorage.getItem(listKey) || '[]');
+
+            // Use a simple duplicate check by name+player
+            const exists = list.some(c =>
+                c.characterName === (character.characterName || '') &&
+                c.playerName === (character.playerName || '')
+            );
+
+            if (!exists) {
+                // store a minimal record; you can store full character if you prefer
+                list.push({
+                    characterName: character.characterName || '',
+                    playerName: character.playerName || '',
+                    // optional: keep a snapshot
+                    snapshot: JSON.parse(JSON.stringify(character))
+                });
+                localStorage.setItem(listKey, JSON.stringify(list));
+            }
+
+            // If your UI has a function to rebuild the dropdown, call it:
+            if (typeof window.populateCharacterDropdown === 'function') {
+                window.populateCharacterDropdown();
+            }
+        } catch (e) {
+            console.warn('Could not update character list for dropdown:', e);
+        }
+
         try {
             // Reset character data
             character = {
+                characterName: '',
+                playerName: '',
                 heritage: '',
                 concept: '',
                 position: '',
@@ -1784,6 +1864,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const element = document.getElementById(id);
                 if (element) element.value = '';
             });
+
+            // Clear character and player names
+            const charNameEl2 = getCharNameEl();
+            const playerNameEl2 = getPlayerNameEl();
+            if (charNameEl2) charNameEl2.value = '';
+            if (playerNameEl2) playerNameEl2.value = '';
+            character.characterName = '';
+            character.playerName = '';
             
             // Clear skills
             ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'].forEach(skill => {
