@@ -28,12 +28,14 @@
             <div class="character-management-row">
                 <label for="characterSelect">Current Character:</label>
                 <select id="characterSelect"></select>
-                <button id="newCharacterBtn" type="button">New</button>
-                <button id="importCharacterBtn" type="button">Import</button>
-                <button id="exportJsonBtn" type="button">Export JSON</button>
-                <button id="deleteCharacterBtn" type="button">Delete</button>
+                <button onclick="newCharacter()">New</button>
+                <button onclick="document.getElementById('importFileInput').click()">Import</button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importCharacterJSON(event)">
+                <button onclick="exportCharacterJSON()">Export JSON</button>
+                <button onclick="deleteCharacter()">Delete</button>
                 <input type="file" id="importFile" accept=".json" style="display:none">
             </div>
+            <div id="importStatus" style="margin-top: 10px; display: none;"></div>
         </div>
 
         <!-- Character and Player Info -->
