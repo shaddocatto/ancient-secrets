@@ -1509,4 +1509,343 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Initialization failed:', error);
         alert('Failed to initialize character builder. Check console for details.');
     }
+
+    // ============================================
+    // IMPORT/EXPORT FUNCTIONS FOR MANAGE CHARACTERS SECTION
+    // Add these to the end of your script.js file
+    // ============================================
+
+    // Export character as JSON
+    function exportCharacterJSON() {
+        try {
+            const exportData = {
+                heritage: character.heritage,
+                concept: document.getElementById('concept')?.value || '',
+                position: document.getElementById('position')?.value || '',
+                trouble: document.getElementById('trouble')?.value || '',
+                secret: document.getElementById('secret')?.value || '',
+                skills: character.skills,
+                powers: character.powers,
+                extras: character.extras,
+                totalPoints: character.totalPoints,
+                usedPoints: character.usedPoints,
+                heritagePoints: character.heritagePoints,
+                gmPowerCosts: gmPowerCosts,
+                extraIdCounter: extraIdCounter,
+                featureInstanceCounter: featureInstanceCounter
+            };
+            
+            console.log('Exporting character:', exportData);
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Use character concept for filename, or default
+            const characterName = (exportData.concept || 'character').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            a.download = `${characterName}_ancient_secrets.json`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showImportStatus('Character exported successfully!', 'success');
+        } catch (error) {
+            console.error('Export JSON failed:', error);
+            showImportStatus('Export failed: ' + error.message, 'error');
+        }
+    }
+
+    // Export character as text (already exists, but renamed for clarity)
+    function exportCharacterText() {
+        exportCharacter();
+    }
+
+    // Import character from JSON file
+    function importCharacterJSON(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                console.log('Importing character:', importedData);
+                
+                // Validate the data has required fields
+                if (!importedData.hasOwnProperty('heritage') || !importedData.hasOwnProperty('skills')) {
+                    throw new Error('Invalid character file format');
+                }
+                
+                // Clear current character
+                character = {
+                    heritage: '',
+                    concept: '',
+                    position: '',
+                    trouble: '',
+                    secret: '',
+                    skills: {
+                        strength: 0,
+                        warfare: 0,
+                        psyche: 0,
+                        endurance: 0,
+                        status: 0,
+                        intrigue: 0,
+                        hunting: 0,
+                        lore: 0
+                    },
+                    powers: [],
+                    extras: [],
+                    totalPoints: 60,
+                    usedPoints: 0,
+                    heritagePoints: 0
+                };
+                
+                // Import heritage
+                if (importedData.heritage) {
+                    character.heritage = importedData.heritage;
+                    const heritageElement = document.getElementById('heritage');
+                    if (heritageElement) {
+                        heritageElement.value = importedData.heritage;
+                        updateHeritage();
+                    }
+                }
+                
+                // Import aspects
+                if (importedData.concept) {
+                    const element = document.getElementById('concept');
+                    if (element) element.value = importedData.concept;
+                }
+                if (importedData.position) {
+                    const element = document.getElementById('position');
+                    if (element) element.value = importedData.position;
+                }
+                if (importedData.trouble) {
+                    const element = document.getElementById('trouble');
+                    if (element) element.value = importedData.trouble;
+                }
+                if (importedData.secret) {
+                    const element = document.getElementById('secret');
+                    if (element) element.value = importedData.secret;
+                }
+                
+                // Import skills
+                if (importedData.skills) {
+                    Object.entries(importedData.skills).forEach(([skill, value]) => {
+                        character.skills[skill] = value;
+                        const element = document.getElementById(skill);
+                        if (element) {
+                            element.value = value;
+                        }
+                    });
+                    updateSkills();
+                }
+                
+                // Import GM power costs
+                if (importedData.gmPowerCosts) {
+                    gmPowerCosts = importedData.gmPowerCosts;
+                    Object.entries(gmPowerCosts).forEach(([powerId, cost]) => {
+                        const input = document.getElementById(powerId + '-manual-cost');
+                        if (input) input.value = cost;
+                    });
+                }
+                
+                // Import powers - first uncheck all
+                const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
+                powerElements.forEach(element => {
+                    element.checked = false;
+                });
+                
+                // Then check the imported powers
+                if (importedData.powers && Array.isArray(importedData.powers)) {
+                    importedData.powers.forEach(power => {
+                        const element = document.getElementById(power.id);
+                        if (element) {
+                            element.checked = true;
+                        }
+                    });
+                    updatePowers();
+                }
+                
+                // Import extras
+                if (importedData.extras && Array.isArray(importedData.extras)) {
+                    // Clear existing extras
+                    character.extras = [];
+                    const container = document.getElementById('extrasContainer');
+                    if (container) container.innerHTML = '';
+                    
+                    // Set counters
+                    if (importedData.extraIdCounter) {
+                        extraIdCounter = importedData.extraIdCounter;
+                    }
+                    if (importedData.featureInstanceCounter) {
+                        featureInstanceCounter = importedData.featureInstanceCounter;
+                    }
+                    
+                    // Import each extra
+                    importedData.extras.forEach(extra => {
+                        character.extras.push(extra);
+                        renderExtra(extra);
+                    });
+                }
+                
+                // Update display
+                updatePointsDisplay();
+                saveCharacter();
+                
+                showImportStatus('Character imported successfully!', 'success');
+                
+                // Reset file input
+                event.target.value = '';
+                
+            } catch (error) {
+                console.error('Import failed:', error);
+                showImportStatus('Import failed: ' + error.message, 'error');
+                event.target.value = '';
+            }
+        };
+        
+        reader.onerror = function() {
+            showImportStatus('Failed to read file', 'error');
+            event.target.value = '';
+        };
+        
+        reader.readAsText(file);
+    }
+
+    // Show import/export status message
+    function showImportStatus(message, type) {
+        const statusElement = document.getElementById('importStatus');
+        if (!statusElement) {
+            console.log('Status:', message);
+            return;
+        }
+        
+        statusElement.textContent = message;
+        statusElement.style.color = type === 'success' ? '#4ecdc4' : '#ff6b6b';
+        statusElement.style.display = 'block';
+        
+        setTimeout(() => {
+            statusElement.style.display = 'none';
+        }, 5000);
+    }
+
+    // New character (clear everything)
+    function newCharacter() {
+        if (!confirm('Create a new character? This will clear all current data.')) {
+            return;
+        }
+        
+        try {
+            // Reset character data
+            character = {
+                heritage: '',
+                concept: '',
+                position: '',
+                trouble: '',
+                secret: '',
+                skills: {
+                    strength: 0,
+                    warfare: 0,
+                    psyche: 0,
+                    endurance: 0,
+                    status: 0,
+                    intrigue: 0,
+                    hunting: 0,
+                    lore: 0
+                },
+                powers: [],
+                extras: [],
+                totalPoints: 60,
+                usedPoints: 0,
+                heritagePoints: 0
+            };
+            
+            extraIdCounter = 0;
+            featureInstanceCounter = 0;
+            gmPowerCosts = {};
+            
+            // Clear heritage
+            const heritageElement = document.getElementById('heritage');
+            if (heritageElement) {
+                heritageElement.value = '';
+                updateHeritage();
+            }
+            
+            // Clear aspects
+            ['concept', 'position', 'trouble', 'secret'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.value = '';
+            });
+            
+            // Clear skills
+            ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'].forEach(skill => {
+                const element = document.getElementById(skill);
+                if (element) element.value = 0;
+            });
+            updateSkills();
+            
+            // Clear powers
+            const powerElements = document.querySelectorAll('input[type="checkbox"][data-cost]');
+            powerElements.forEach(element => {
+                element.checked = false;
+                element.disabled = false;
+            });
+            updatePowers();
+            
+            // Clear GM power costs
+            ['dominion', 'essence', 'song'].forEach(powerId => {
+                const input = document.getElementById(powerId + '-manual-cost');
+                if (input) input.value = '';
+            });
+            
+            // Clear extras
+            const extrasContainer = document.getElementById('extrasContainer');
+            if (extrasContainer) extrasContainer.innerHTML = '';
+            
+            // Update display
+            updatePointsDisplay();
+            saveCharacter();
+            
+            showImportStatus('New character created', 'success');
+            
+        } catch (error) {
+            console.error('New character failed:', error);
+            showImportStatus('Failed to create new character: ' + error.message, 'error');
+        }
+    }
+
+    // Delete current character (clear storage and reset)
+    function deleteCharacter() {
+        if (!confirm('Delete this character permanently? This cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            localStorage.removeItem('amberCharacter');
+            newCharacter();
+            showImportStatus('Character deleted', 'success');
+        } catch (error) {
+            console.error('Delete failed:', error);
+            showImportStatus('Failed to delete character: ' + error.message, 'error');
+        }
+    }
+
+    // ============================================
+    // UPDATE THE resetCharacter FUNCTION
+    // Replace the existing resetCharacter function with this:
+    // ============================================
+
+    function resetCharacter() {
+        deleteCharacter();
+    }
+
+    console.log('Import/Export functions loaded successfully');
+
+
 });
