@@ -1010,44 +1010,45 @@ function calculateExtraCost(extra) {
 function calculateUsedPoints() {
     try {
         let total = 0;
-        
-        total += character.heritagePoints;
-        
+
+        // Skills
         Object.values(character.skills).forEach(value => {
             total += Math.max(0, value);
         });
-        
+
+        // Powers
         character.powers.forEach(power => {
             let powerCost = power.cost;
-            
             if (isHeritageFreePower(power.id)) {
                 powerCost = 0;
-            } else {
-                if (power.credit) {
-                    const credits = power.credit.split(',');
-                    credits.forEach(credit => {
-                        const [powerName, creditValue] = credit.split(':');
-                        const hasPowerForCredit = character.powers.some(p => p.id === powerName);
-                        if (hasPowerForCredit) {
-                            powerCost += parseInt(creditValue);
-                        }
-                    });
-                }
+            } else if (power.credit) {
+                const credits = power.credit.split(',');
+                credits.forEach(credit => {
+                    const [powerName, creditValue] = credit.split(':');
+                    const hasPowerForCredit = character.powers.some(p => p.id === powerName);
+                    if (hasPowerForCredit) {
+                        powerCost += parseInt(creditValue);
+                    }
+                });
             }
-            
             total += Math.max(0, powerCost);
         });
-        
+
+        // Extras
         character.extras.forEach(extra => {
             total += calculateExtraCost(extra);
         });
-        
+
+        // 👇 Here's the key line: subtract the signed heritagePoints
+        total -= (character.heritagePoints || 0);
+
         return total;
     } catch (error) {
         console.error('Error in calculateUsedPoints:', error);
         return 0;
     }
 }
+
 
 function updatePointsDisplay() {
     try {
