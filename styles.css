@@ -388,6 +388,13 @@ button:hover {
 #characterSummary {
     margin-top: 30px;
 }
+#characterSummary > p {
+    margin: 0px !important;
+}
+#characterSummary h4 {
+    margin-bottom: 4px;
+    text-decoration: underline;
+}
 .summary-section {
     background-color: #1e1e1e;
     padding: 12px;

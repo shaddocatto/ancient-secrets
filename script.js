@@ -1090,7 +1090,7 @@ function updateCharacterSummary() {
         const summaryDiv = document.getElementById('characterSummary');
         if (!summaryDiv) return;
         
-        let summary = '<h3>Character Overview</h3>';
+        let summary = '';
         
         if (character.heritage) {
             const heritageDisplay = character.heritage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
