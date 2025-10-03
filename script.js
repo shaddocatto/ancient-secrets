@@ -1163,9 +1163,6 @@ function updateCharacterSummary() {
         
         summary += `<h4>Point Allocation</h4>`;
         summary += `<p><strong>Total Available:</strong> ${character.totalPoints}</p>`;
-        if (character.heritagePoints !== 0) {
-            summary += `<p><strong>Heritage Adjustment:</strong> ${character.heritagePoints > 0 ? '+' : ''}${character.heritagePoints}</p>`;
-        }
         summary += `<p><strong>Used:</strong> ${character.usedPoints}</p>`;
         summary += `<p><strong>Good Stuff Rating:</strong> ${character.totalPoints - character.usedPoints}</p>`;
         
