@@ -305,6 +305,9 @@ function addExtra() {
             name: '',
             type: '',
             isSimple: true,
+            // NEW: multiple aspects (first slot replaces prior simpleAspect)
+            simpleAspects: [''],
+            // kept for backward-compat with older saves; we still update it
             simpleAspect: '',
             features: [],
             isEditing: true
@@ -398,14 +401,30 @@ function renderExtraEditMode(extra) {
         
         <div id="${extra.id}_simple_options" style="display: ${extra.isSimple ? 'block' : 'none'};">
             <div class="form-group">
-                <label>Aspect:</label>
-                <input type="text" id="${extra.id}_aspect" value="${extra.simpleAspect || ''}" placeholder="e.g., Swift as the Wind, Unbreakable Bond" onchange="updateExtraAspect('${extra.id}')">
+                <label>Aspect(s):</label>
+                <div id="${extra.id}_simple_aspects_list">
+                    ${(Array.isArray(extra.simpleAspects) ? extra.simpleAspects : [''])
+                        .map((txt, idx) => `
+                            <div class="simple-aspect-row" style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+                                <input type="text"
+                                    value="${txt || ''}"
+                                    placeholder="${idx===0 ? 'e.g., Swift as the Wind' : 'Additional Aspect'}"
+                                    style="flex:1;"
+                                    onchange="updateSimpleAspect('${extra.id}', ${idx}, this.value)">
+                                ${idx > 0 ? `<button type="button" class="remove-instance-btn"
+                                        title="Remove Aspect"
+                                        onclick="removeSimpleAspect('${extra.id}', ${idx})">×</button>` : ''}
+                            </div>
+                        `).join('')}
+                </div>
+                <button type="button" class="add-instance-btn" style="margin-top:6px;"
+                        onclick="addSimpleAspect('${extra.id}')">+ Add Aspect (0.5 pts)</button>
             </div>
             <div class="heritage-info">
                 <strong>Simple Extras:</strong> ${getSimpleInvokes(extra.type)} invoke(s) per point spent. Invokes reset at milestones.
             </div>
         </div>
-        
+
         <div id="${extra.id}_custom_options" style="display: ${extra.isSimple ? 'none' : 'block'};">
             ${renderCustomOptions(extra)}
         </div>
@@ -424,9 +443,14 @@ function renderExtraDisplayMode(extra) {
     
     let details = '';
     
-    if (extra.isSimple && extra.simpleAspect) {
-        details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">Aspect: ${extra.simpleAspect}</div>`;
-    } else if (!extra.isSimple && extra.features.length > 0) {
+    if (extra.isSimple) {
+        const aspects = Array.isArray(extra.simpleAspects) ? extra.simpleAspects.filter(a => a && a.trim()) : (extra.simpleAspect ? [extra.simpleAspect] : []);
+        if (aspects.length) {
+            const label = aspects.length > 1 ? 'Aspects' : 'Aspect';
+            details = `<div style="margin: 10px 0; color: #cccccc; font-style: italic;">${label}: ${aspects.join(', ')}</div>`;
+        }
+    }
+    else if (!extra.isSimple && extra.features.length > 0) {
         const featureGroups = {};
         extra.features.forEach(f => {
             if (!featureGroups[f.name]) featureGroups[f.name] = [];
@@ -971,15 +995,59 @@ function updateExtraMode(extraId, isSimple) {
     }
 }
 
+function addSimpleAspect(extraId) {
+    try {
+        const ex = character.extras.find(e => e.id === extraId);
+        if (!ex || !ex.isSimple) return;
+        if (!Array.isArray(ex.simpleAspects)) ex.simpleAspects = [ex.simpleAspect || ''];
+        ex.simpleAspects.push('');
+        ex.simpleAspect = ex.simpleAspects[0] || '';
+        const simpleDiv = document.getElementById(extraId + '_simple_options');
+        if (simpleDiv) simpleDiv.innerHTML = simpleDiv.innerHTML = `
+            ${renderExtraEditMode(ex)}
+        `;
+        // Re-render whole extra to keep buttons/headers consistent
+        renderExtra(ex);
+        updatePointsDisplay();
+        saveCharacter();
+    } catch (err) { console.error('Error in addSimpleAspect:', err); }
+}
+
+function removeSimpleAspect(extraId, index) {
+    try {
+        const ex = character.extras.find(e => e.id === extraId);
+        if (!ex || !ex.isSimple || !Array.isArray(ex.simpleAspects)) return;
+        if (index <= 0) return; // don't remove the primary field
+        ex.simpleAspects.splice(index, 1);
+        ex.simpleAspect = ex.simpleAspects[0] || '';
+        renderExtra(ex);
+        updatePointsDisplay();
+        saveCharacter();
+    } catch (err) { console.error('Error in removeSimpleAspect:', err); }
+}
+
+function updateSimpleAspect(extraId, index, value) {
+    try {
+        const ex = character.extras.find(e => e.id === extraId);
+        if (!ex || !ex.isSimple) return;
+        if (!Array.isArray(ex.simpleAspects)) ex.simpleAspects = [ex.simpleAspect || ''];
+        ex.simpleAspects[index] = value;
+        // Mirror the first one for legacy export/summary code paths
+        ex.simpleAspect = ex.simpleAspects[0] || '';
+        saveCharacter();
+    } catch (err) { console.error('Error in updateSimpleAspect:', err); }
+}
+
 function updateExtraAspect(extraId) {
     try {
         const extra = character.extras.find(e => e.id === extraId);
         if (!extra) return;
-        
         const aspectInput = document.getElementById(extraId + '_aspect');
         if (!aspectInput) return;
-        
-        extra.simpleAspect = aspectInput.value;
+        const val = aspectInput.value;
+        extra.simpleAspect = val;
+        if (!Array.isArray(extra.simpleAspects)) extra.simpleAspects = [val];
+        else extra.simpleAspects[0] = val;
         saveCharacter();
     } catch (error) {
         console.error('Error in updateExtraAspect:', error);
@@ -990,8 +1058,12 @@ function calculateExtraCost(extra) {
     if (!extra.type) return 0;
     
     if (extra.isSimple) {
-        return 1;
-    } else {
+        // Base Simple Extra is still 1 point.
+        // Each additional Aspect beyond the first costs +0.5
+        const count = Array.isArray(extra.simpleAspects) ? extra.simpleAspects.length : (extra.simpleAspect ? 1 : 0);
+        const additional = Math.max(0, count - 1) * 0.5;
+        return 1 + additional;
+} else {
         return extra.features.reduce((total, feature) => {
             let featureCost = feature.cost;
             
@@ -1152,8 +1224,12 @@ function updateCharacterSummary() {
                 
                 summary += `<p><strong>${extraName}${extraType}</strong>${costText}</p>`;
                 
-                if (extra.isSimple && extra.simpleAspect) {
-                    summary += `<p style="margin-left: 20px; font-style: italic;">Aspect: ${extra.simpleAspect}</p>`;
+                if (extra.isSimple) {
+                    const aspects = Array.isArray(extra.simpleAspects) ? extra.simpleAspects.filter(a => a && a.trim()) : (extra.simpleAspect ? [extra.simpleAspect] : []);
+                    if (aspects.length) {
+                        const label = aspects.length > 1 ? 'Aspects' : 'Aspect';
+                        summary += `<p style="margin-left: 20px; font-style: italic;">${label}: ${aspects.join(', ')}</p>`;
+                    }
                 } else if (!extra.isSimple && extra.features.length > 0) {
                     const featureList = extra.features.map(f => f.name).join(', ');
                     summary += `<p style="margin-left: 20px; font-style: italic;">Features: ${featureList}</p>`;
@@ -1321,6 +1397,20 @@ function loadCharacter() {
 
         if (saveData.extras) {
             character.extras = saveData.extras;
+
+            // ---- MIGRATE: ensure simpleAspects array exists for simple extras
+            character.extras = (saveData.extras || []).map(ex => {
+                if (ex.isSimple) {
+                    if (!Array.isArray(ex.simpleAspects)) {
+                        const seed = (ex.simpleAspect && typeof ex.simpleAspect === 'string') ? ex.simpleAspect : '';
+                        ex.simpleAspects = [seed];
+                    }
+                    // keep legacy mirror field updated
+                    ex.simpleAspect = ex.simpleAspects[0] || '';
+                }
+                return ex;
+            });
+
             extraIdCounter = saveData.extraIdCounter || 0;
             featureInstanceCounter = saveData.featureInstanceCounter || 0;
             
@@ -1432,8 +1522,12 @@ function exportCharacter() {
                 
                 output += `${extraName}${extraType}${costText}\n`;
                 
-                if (extra.isSimple && extra.simpleAspect) {
-                    output += `  Aspect: ${extra.simpleAspect}\n`;
+                if (extra.isSimple) {
+                    const aspects = Array.isArray(extra.simpleAspects) ? extra.simpleAspects.filter(a => a && a.trim()) : (extra.simpleAspect ? [extra.simpleAspect] : []);
+                    if (aspects.length) {
+                        const label = aspects.length > 1 ? 'Aspects' : 'Aspect';
+                        output += `  ${label}: ${aspects.join(', ')}\n`;
+                    }
                 } else if (!extra.isSimple && extra.features.length > 0) {
                     extra.features.forEach(feature => {
                         output += `  ${feature.name}`;
