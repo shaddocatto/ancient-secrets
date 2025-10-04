@@ -48,6 +48,31 @@ function getPlayerNameEl() {
         || document.querySelector('[name="playerName"]');
 }
 
+function upsertCharacterListEntry(charName, playerName, snapshot) {
+    try {
+        const listKey = 'ancientSecrets.characters';
+        const list = JSON.parse(localStorage.getItem(listKey) || '[]');
+
+        // simple de-dupe on name+player
+        const idx = list.findIndex(c => c.characterName === (charName || '') &&
+                                        c.playerName === (playerName || ''));
+        const entry = {
+            characterName: charName || '',
+            playerName: playerName || '',
+            snapshot: snapshot ? JSON.parse(JSON.stringify(snapshot)) : undefined
+        };
+
+        if (idx >= 0) list[idx] = entry; else list.push(entry);
+        localStorage.setItem(listKey, JSON.stringify(list));
+
+        if (typeof window.populateCharacterDropdown === 'function') {
+            window.populateCharacterDropdown();
+        }
+    } catch (e) {
+        console.warn('Could not update character list for dropdown:', e);
+    }
+}
+
 // Heritage management
 function updateHeritage() {
     try {
@@ -1607,6 +1632,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         loadCharacter();
         updatePointsDisplay();
+        // Ensure current save is represented in the drop-down
+        upsertCharacterListEntry(character.characterName, character.playerName, character);
         
         const textInputs = ['concept', 'position', 'trouble', 'secret'];
         textInputs.forEach(inputId => {
@@ -1840,6 +1867,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 updatePointsDisplay();
                 saveCharacter();
                 
+                // Register in the character list so the drop-down shows it
+                upsertCharacterListEntry(character.characterName, character.playerName, character);
+
                 showImportStatus('Character imported successfully!', 'success');
                 
                 // Reset file input
@@ -1883,35 +1913,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // ---- Register imported character for dropdowns / lists
-        try {
-            const listKey = 'ancientSecrets.characters';
-            const list = JSON.parse(localStorage.getItem(listKey) || '[]');
-
-            // Use a simple duplicate check by name+player
-            const exists = list.some(c =>
-                c.characterName === (character.characterName || '') &&
-                c.playerName === (character.playerName || '')
-            );
-
-            if (!exists) {
-                // store a minimal record; you can store full character if you prefer
-                list.push({
-                    characterName: character.characterName || '',
-                    playerName: character.playerName || '',
-                    // optional: keep a snapshot
-                    snapshot: JSON.parse(JSON.stringify(character))
-                });
-                localStorage.setItem(listKey, JSON.stringify(list));
-            }
-
-            // If your UI has a function to rebuild the dropdown, call it:
-            if (typeof window.populateCharacterDropdown === 'function') {
-                window.populateCharacterDropdown();
-            }
-        } catch (e) {
-            console.warn('Could not update character list for dropdown:', e);
-        }
+        // Register current character in the dropdown list before clearing
+        upsertCharacterListEntry(character.characterName, character.playerName, character);
 
         try {
             // Reset character data
