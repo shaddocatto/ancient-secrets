@@ -257,6 +257,9 @@ function updatePowers() {
     } catch (error) {
         console.error('Error in updatePowers:', error);
     }
+
+        // Refresh Extras UI so dropdowns include current powers
+        refreshAllExtrasUI();
 }
 
 function updatePowerCosts() {
@@ -407,7 +410,7 @@ function renderExtraEditMode(extra) {
             <select id="${extra.id}_type" onchange="updateExtraType('${extra.id}')">
                 <option value="">Select Type...</option>
                 <option value="ally" ${extra.type === 'ally' ? 'selected' : ''}>Ally (pets, servants, associates, contacts)</option>
-                <option value="domain" ${extra.type === 'domain' ? 'selected' : ''}>Territory (shadow, location, land)</option>
+                <option value="domain" ${extra.type === 'domain' ? 'selected' : ''}>Domain (shadow, location, land)</option>
                 <option value="item" ${extra.type === 'item' ? 'selected' : ''}>Item (weapon, tool, device)</option>
                 <option value="mastery" ${extra.type === 'mastery' ? 'selected' : ''}>Mastery (training, knowledge, natural ability)</option>
             </select>
@@ -542,8 +545,7 @@ function saveExtra(extraId) {
 
 function getSimpleInvokes(type) {
     switch(type) {
-        case 'domain':
-        case 'territory': return 2;
+        case 'domain': return 2;
         case 'ally':
         case 'item':
         case 'mastery':
@@ -604,8 +606,34 @@ function renderFeatureInstances(extraId, featureName, instances) {
 }
 
 function renderFeatureInstanceContent(extraId, featureName, instance, index) {
-    const skillOptions = ['strength', 'warfare', 'psyche', 'endurance', 'status', 'intrigue', 'hunting', 'lore'];
-    const skillSelect = skillOptions.map(skill => 
+    // Build options for skills + qualifying powers for dropdowns
+    const baseSkillOptions = ['strength','warfare','psyche','endurance','status','intrigue','hunting','lore'];
+
+    // Gather selected powers that should appear:
+    // - any selected power whose id includes 'advanced', 'master', or 'mastery'
+    // - any selected GM power (data-gm-cost="true") as a proxy for "unique"
+    const selectedPowerElements = Array.from(document.querySelectorAll('input[type="checkbox"][data-cost]')).filter(el => el.checked);
+    const qualifyingPowerIds = selectedPowerElements
+        .filter(el => {
+            const id = (el.id || '').toLowerCase();
+            const gm = el.dataset.gmCost === 'true';
+            return gm || id.includes('advanced') || id.includes('master') || id.includes('mastery');
+        })
+        .map(el => el.id);
+
+    // Deduplicate & map to user-friendly labels
+    const qualifyingPowerOptions = Array.from(new Set(qualifyingPowerIds)).map(id => {
+        const label = id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return { value: id, label };
+    });
+
+    // Build final options array: skills first (value=skill key), then powers
+    const skillOptions = [
+        ...baseSkillOptions.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) })),
+        ...qualifyingPowerOptions
+    ];
+
+    const skillSelect = skillOptions.map(opt => 
         `<option value="${skill}" ${instance.skill === skill ? 'selected' : ''}>${skill.charAt(0).toUpperCase() + skill.slice(1)}</option>`
     ).join('');
     
@@ -910,14 +938,14 @@ function getAvailableFeatures(type) {
             { name: 'Unusual', cost: 0, required: 'Base Cost', description: 'Add a Feature not covered above (see GM for cost).' },
             { name: 'Cursed, Risky, or Uncontrolled', cost: -1, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
         ],
-        territory: [
+        domain: [
             { name: 'Aspect', cost: 0.25, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Barrier', cost: 0.25, required: '', description: 'Each time purchased blocks one Power from Territory.' },
-            { name: 'Control', cost: 0.25, required: '', description: 'Each time purchased gives +1 to control Territory.' },
+            { name: 'Barrier', cost: 0.25, required: '', description: 'Each time purchased blocks one Power from Domain.' },
+            { name: 'Control', cost: 0.25, required: '', description: 'Each time purchased gives +1 to control Domain.' },
             { name: 'Exceptional', cost: 0.5, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
             { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
             { name: 'Focus', cost: 0.5, required: '', description: '+2 to a Skill when [describe circumstance].' },
-            { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Territory.' },
+            { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Domain.' },
             { name: 'Unusual', cost: 0, required: '', description: 'Add a Feature not covered above (see GM for cost).' },
             { name: 'Cursed, Risky, or Uncontrolled', cost: -1, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
         ],
@@ -1471,6 +1499,9 @@ function loadCharacter() {
             saveStatus.style.color = '#ff6b6b';
         }
     }
+
+        // Refresh Extras after loading character
+        refreshAllExtrasUI();
 }
 
 function resetCharacter() {
@@ -1635,9 +1666,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePointsDisplay();
         // Ensure current save is represented in the drop-down
         upsertCharacterListEntry(character.characterName, character.playerName, character);
-        populateCharacterDropdown();
-        const charSel = document.getElementById('characterSelect');
-        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
         
         const textInputs = ['concept', 'position', 'trouble', 'secret'];
         textInputs.forEach(inputId => {
@@ -1670,58 +1698,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ============================================
     
-function populateCharacterDropdown() {
+// Re-render all Extras UI (used to refresh Training/Flexible/Focus dropdowns after power changes)
+function refreshAllExtrasUI() {
     try {
-        const listKey = 'ancientSecrets.characters';
-        const select = document.getElementById('characterSelect');
-        if (!select) return;
-        const list = JSON.parse(localStorage.getItem(listKey) || '[]');
-
-        // Remember current selection
-        const currentVal = select.value;
-
-        // Rebuild options
-        select.innerHTML = '';
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = '— Select —';
-        select.appendChild(placeholder);
-
-        list.forEach((c, idx) => {
-            const opt = document.createElement('option');
-            opt.value = String(idx);
-            const cn = (c.characterName || '').trim() || '(Unnamed)';
-            const pn = (c.playerName || '').trim();
-            opt.textContent = pn ? `${cn} — ${pn}` : cn;
-            select.appendChild(opt);
-        });
-
-        // Restore selection if possible
-        if (currentVal && Number(currentVal) < list.length) {
-            select.value = currentVal;
-        }
+        const container = document.getElementById('extrasContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        (character.extras || []).forEach(extra => renderExtra(extra));
     } catch (e) {
-        console.warn('populateCharacterDropdown failed:', e);
-    }
-}
-
-// Load a character snapshot from the list into the builder
-function loadCharacterFromListIndex(idx) {
-    try {
-        const listKey = 'ancientSecrets.characters';
-        const list = JSON.parse(localStorage.getItem(listKey) || '[]');
-        const entry = list[Number(idx)];
-        if (!entry || !entry.snapshot) return;
-
-        // Persist snapshot to the single-save slot and then call loadCharacter()
-        localStorage.setItem('amberCharacter', JSON.stringify(entry.snapshot));
-        loadCharacter();
-
-        // Ensure points and UI refresh
-        updatePointsDisplay();
-        saveCharacter(); // will also upsert & keep dropdown in sync
-    } catch (e) {
-        console.error('loadCharacterFromListIndex failed:', e);
+        console.error('refreshAllExtrasUI failed:', e);
     }
 }
 
@@ -1929,11 +1914,11 @@ function loadCharacterFromListIndex(idx) {
                 
                 // Register in the character list so the drop-down shows it
                 upsertCharacterListEntry(character.characterName, character.playerName, character);
-        populateCharacterDropdown();
-        const charSel = document.getElementById('characterSelect');
-        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
 
-                showImportStatus('Character imported successfully!', 'success');
+                
+                // Ensure Extras UI reflects newly selected powers
+                refreshAllExtrasUI();
+showImportStatus('Character imported successfully!', 'success');
                 
                 // Reset file input
                 event.target.value = '';
@@ -1978,9 +1963,6 @@ function loadCharacterFromListIndex(idx) {
         
         // Register current character in the dropdown list before clearing
         upsertCharacterListEntry(character.characterName, character.playerName, character);
-        populateCharacterDropdown();
-        const charSel = document.getElementById('characterSelect');
-        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
 
         try {
             // Reset character data
