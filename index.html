@@ -55,10 +55,10 @@
                 <select id="heritage" onchange="updateHeritage()">
                     <option value="">Select Heritage...</option>
                     <option value="recognized-amber">Recognized Amber (Free - Court position, Blood Curse, Slow Regeneration, Pattern Adept)</option>
-                    <option value="unrecognized-amber">Unrecognized Amber (+5 pts - Blood Curse, Slow Regeneration, see GM)</option>
-                    <option value="chaos">Chaos (+2 pts - Shapeshifting free)</option>
-                    <option value="both">Both Amber and Chaos (-3 pts - All benefits)</option>
-                    <option value="other">Other (+6 pts - Work with GM)</option>
+                    <option value="unrecognized-amber">Unrecognized Amber — credit 5 pts (Blood Curse, Slow Regeneration, see GM)</option>
+                    <option value="chaos">Chaos — credit 2 pts (Shapeshifting free)</option>
+                    <option value="both">Both Amber and Chaos — costs 3 pts (All listed benefits)</option>
+                    <option value="other">Other — credit 6 pts (Work with GM)</option>
                 </select>
                 <div id="heritageInfo" class="heritage-info" style="display: none;"></div>
             </div>
@@ -171,7 +171,7 @@
                             <span class="power-cost" id="master-stair-cost">3</span>
                             Master of the Grand Stair
                         </label>
-                        <div class="power-description">Requires: Warden; Amber (0) Psyche, Chaos (-1) Endurance. Ward Doors, Control Doors, Making Keys, Advanced abilities</div>
+                        <div class="power-description">Requires: Warden of the Grand Stair; Amber (0) Psyche and Chaos (-1) Endurance. Identify Key, Making Keys, Ward Doors, Control Doors, advanced Wayfinding.</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -179,7 +179,7 @@
                             <span class="power-cost" id="eidolon-mastery-cost">8</span>
                             Eidolon Mastery
                         </label>
-                        <div class="power-description">Requires: Amber (0) Psyche. Immortality, Edit reality, Guide reality, Sanctification</div>
+                        <div class="power-description">Requires: Pattern Adept (Advanced Pattern recommended). Perceive Eidolon, Fortification, Edit reality, Guide reality, Sanctification.</div>
                     </div>
                 </div>
 
@@ -224,7 +224,7 @@
                             <span class="power-cost" id="umbra-mastery-cost">8</span>
                             Umbra Mastery
                         </label>
-                        <div class="power-description">Requires: Amber (0) Psyche. Perceiving Umbra, Control Reality, Evolution, Immortality, Regeneration, Identify Door, Force Door Open</div>
+                        <div class="power-description">Requires: Amber (0) Strength, Amber (0) Psyche, Amber (0) Endurance. Immortality, Regeneration, Identify Door, Force Door Open.</div>
                     </div>
                 </div>
 
@@ -282,7 +282,7 @@
                             <span class="power-cost" id="undershadow-manipulator-cost">3</span>
                             Undershadow Manipulator
                         </label>
-                        <div class="power-description">Requires: Amber (0) Psyche, Chaos (-1) Status. Open Portal, Summon/Bind Undershadow Creatures</div>
+                        <div class="power-description">Requires: Amber (0) Psyche and Chaos (-1) Status. Open Portal, Summon and/or Bind Undershadow creatures.</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -298,7 +298,7 @@
                             <span class="power-cost" id="keeper-void-cost">4</span>
                             Keeper of the Void
                         </label>
-                        <div class="power-description">Requires: Amber (0) Psyche, Chaos (-1) Endurance. Find rift into Void, Survive Void, Communicate with creatures of the deep, Command Undershadow and Void creatures</div>
+                        <div class="power-description">Requires: Advanced Undershadow Manipulator. Scry Void, Communicate with creatures of the deep, Command Undershadow and Void creatures.</div>
                     </div>
                 </div>
 
@@ -311,7 +311,7 @@
                             <span class="power-cost" id="sorcery-cost">3</span>
                             Sorcery and Conjuration
                         </label>
-                        <div class="power-description">Requires: Chaos (-1) Lore and power source. Develop Spell, Cast Spell, Conjure Shadow, Empowerment, Imbue, Create</div>
+                        <div class="power-description">Requires: none. Prepare/hold spells, Cast Spell, Conjure Shadow, Empowerment, Imbue, Create.</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -319,7 +319,7 @@
                             <span class="power-cost" id="invocation-cost">3</span>
                             Invocation
                         </label>
-                        <div class="power-description">Requires: Amber (0) Psyche and Lore. True Name powers (Divine, Call, Summon, Banish, Compel, Bind), Purification</div>
+                        <div class="power-description">Requires: none. Understand True Name (Divine); Call, Summon, Banish, Compel, Bind; Purification.</div>
                     </div>
                     <div class="power-item">
                         <label>
@@ -327,7 +327,7 @@
                             <span class="power-cost" id="runes-cost">3</span>
                             The Runes
                         </label>
-                        <div class="power-description">Requires: Ranked (+1) Lore. Enhance/diminish powers, create/break connections, alter local reality</div>
+                        <div class="power-description">Requires: none. Enhance or diminish, create or break connections, alter local reality.</div>
                     </div>
                 </div>
 
@@ -355,13 +355,23 @@
                     </div>
                     <div class="power-item">
                         <label>
-                            <input type="checkbox" id="song" onchange="updatePowers()" data-cost="0" data-gm-cost="true">
-                            <span class="power-cost gm" id="song-cost">GM</span>
-                            The Song
-                            <input type="number" class="gm-cost-input" id="song-manual-cost" placeholder="Cost" onchange="updateGMPowerCost('song')">
+                            <input type="checkbox" id="harmony" onchange="updatePowers()" data-cost="0" data-gm-cost="true">
+                            <span class="power-cost gm" id="harmony-cost">GM</span>
+                            Harmony
+                            <input type="number" class="gm-cost-input" id="harmony-manual-cost" placeholder="Cost" onchange="updateGMPowerCost('harmony')">
                         </label>
                         <div class="power-description">Requires: Ranked (+1) Psyche. Hear the Song, Join the Song, Guide the Song, Add to the Song</div>
                     </div>
+                    <div class="power-item">
+                        <label>
+                            <input type="checkbox" id="otherlands" onchange="updatePowers()" data-cost="0" data-gm-cost="true">
+                            <span class="power-cost gm" id="otherlands-cost">GM</span>
+                            Otherlands, Hidden Path
+                            <input type="number" class="gm-cost-input" id="otherlands-manual-cost" placeholder="Cost" onchange="updateGMPowerCost('otherlands')">
+                        </label>
+                        <div class="power-description">Requires: Ranked (+1) Hunting. Find fracture, travel the path, connect weave, see shards.</div>
+                    </div>
+    
                 </div>
             </div>
         </div>

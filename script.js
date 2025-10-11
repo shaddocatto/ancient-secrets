@@ -1210,7 +1210,7 @@ function updateCharacterSummary() {
             let hasGMPowers = false;
             character.powers.forEach(power => {
                 const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                if (['dominion', 'essence', 'song'].includes(power.id)) {
+                if (['dominion', 'essence', 'harmony', 'otherlands'].includes(power.id)) {
                     const manualCost = gmPowerCosts[power.id];
                     summary += `<p><strong>${powerName}</strong> (${manualCost || 'GM approval required'} pts)</p>`;
                     hasGMPowers = true;
@@ -1513,7 +1513,7 @@ function exportCharacter() {
             output += '\n=== POWERS ===\n';
             exportData.powers.forEach(power => {
                 const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                if (['dominion', 'essence', 'song'].includes(power.id)) {
+                if (['dominion', 'essence', 'harmony', 'otherlands'].includes(power.id)) {
                     const manualCost = gmPowerCosts[power.id];
                     output += `${powerName} (${manualCost || 'GM approval required'} pts)\n`;
                 } else {
@@ -1646,7 +1646,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        const gmPowerIds = ['dominion', 'essence', 'song'];
+        const gmPowerIds = ['dominion', 'essence', 'harmony', 'otherlands'];
         gmPowerIds.forEach(powerId => {
             const input = document.getElementById(powerId + '-manual-cost');
             if (input) {
@@ -1984,7 +1984,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updatePowers();
             
             // Clear GM power costs
-            ['dominion', 'essence', 'song'].forEach(powerId => {
+            ['dominion', 'essence', 'harmony', 'otherlands'].forEach(powerId => {
                 const input = document.getElementById(powerId + '-manual-cost');
                 if (input) input.value = '';
             });
