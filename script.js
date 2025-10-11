@@ -1501,6 +1501,7 @@ function loadCharacter() {
 
         // Refresh Extras after loading character
         refreshAllExtrasUI();
+        if (typeof populateCharacterDropdown === 'function') populateCharacterDropdown();
 }
 
 function resetCharacter() {
@@ -1657,6 +1658,54 @@ function testLocalStorage() {
 }
 
 // Initialize with comprehensive error handling
+
+// === Character list dropdown helpers ===
+function populateCharacterDropdown() {
+    try {
+        const listKey = 'ancientSecrets.characters';
+        const select = document.getElementById('characterSelect');
+        if (!select) return;
+        const list = JSON.parse(localStorage.getItem(listKey) || '[]');
+
+        const currentVal = select.value;
+        select.innerHTML = '';
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = '— Select —';
+        select.appendChild(ph);
+
+        list.forEach((c, idx) => {
+            const opt = document.createElement('option');
+            opt.value = String(idx);
+            const cn = (c.characterName || '').trim() || '(Unnamed)';
+            const pn = (c.playerName || '').trim();
+            opt.textContent = pn ? `${cn} — ${pn}` : cn;
+            select.appendChild(opt);
+        });
+
+        if (currentVal && Number(currentVal) < list.length) {
+            select.value = currentVal;
+        }
+    } catch (e) {
+        console.warn('populateCharacterDropdown failed:', e);
+    }
+}
+
+function loadCharacterFromListIndex(idx) {
+    try {
+        const listKey = 'ancientSecrets.characters';
+        const list = JSON.parse(localStorage.getItem(listKey) || '[]');
+        const entry = list[Number(idx)];
+        if (!entry || !entry.snapshot) return;
+        localStorage.setItem('amberCharacter', JSON.stringify(entry.snapshot));
+        loadCharacter();
+        updatePointsDisplay();
+        saveCharacter();
+    } catch (e) {
+        console.error('loadCharacterFromListIndex failed:', e);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     try {
         console.log('Initializing character builder...');
@@ -1665,6 +1714,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePointsDisplay();
         // Ensure current save is represented in the drop-down
         upsertCharacterListEntry(character.characterName, character.playerName, character);
+        populateCharacterDropdown();
+        const charSel = document.getElementById('characterSelect');
+        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
         
         const textInputs = ['concept', 'position', 'trouble', 'secret'];
         textInputs.forEach(inputId => {
@@ -1913,10 +1965,14 @@ function refreshAllExtrasUI() {
                 
                 // Register in the character list so the drop-down shows it
                 upsertCharacterListEntry(character.characterName, character.playerName, character);
+        populateCharacterDropdown();
+        const charSel = document.getElementById('characterSelect');
+        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
 
                 
                 // Ensure Extras UI reflects newly selected powers
                 refreshAllExtrasUI();
+        if (typeof populateCharacterDropdown === 'function') populateCharacterDropdown();
 showImportStatus('Character imported successfully!', 'success');
                 
                 // Reset file input
@@ -1962,6 +2018,9 @@ showImportStatus('Character imported successfully!', 'success');
         
         // Register current character in the dropdown list before clearing
         upsertCharacterListEntry(character.characterName, character.playerName, character);
+        populateCharacterDropdown();
+        const charSel = document.getElementById('characterSelect');
+        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
 
         try {
             // Reset character data
