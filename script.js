@@ -407,7 +407,7 @@ function renderExtraEditMode(extra) {
             <select id="${extra.id}_type" onchange="updateExtraType('${extra.id}')">
                 <option value="">Select Type...</option>
                 <option value="ally" ${extra.type === 'ally' ? 'selected' : ''}>Ally (pets, servants, associates, contacts)</option>
-                <option value="domain" ${extra.type === 'domain' ? 'selected' : ''}>Domain (shadow, location, land)</option>
+                <option value="domain" ${extra.type === 'domain' ? 'selected' : ''}>Territory (shadow, location, land)</option>
                 <option value="item" ${extra.type === 'item' ? 'selected' : ''}>Item (weapon, tool, device)</option>
                 <option value="mastery" ${extra.type === 'mastery' ? 'selected' : ''}>Mastery (training, knowledge, natural ability)</option>
             </select>
@@ -542,7 +542,8 @@ function saveExtra(extraId) {
 
 function getSimpleInvokes(type) {
     switch(type) {
-        case 'domain': return 2;
+        case 'domain':
+        case 'territory': return 2;
         case 'ally':
         case 'item':
         case 'mastery':
@@ -909,14 +910,14 @@ function getAvailableFeatures(type) {
             { name: 'Unusual', cost: 0, required: 'Base Cost', description: 'Add a Feature not covered above (see GM for cost).' },
             { name: 'Cursed, Risky, or Uncontrolled', cost: -1, required: 'Base Cost', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
         ],
-        domain: [
+        territory: [
             { name: 'Aspect', cost: 0.25, required: '', description: 'Add one Aspect or one free Invoke to existing Aspect. Max of two free invokes per Aspect.' },
-            { name: 'Barrier', cost: 0.25, required: '', description: 'Each time purchased blocks one Power from Domain.' },
-            { name: 'Control', cost: 0.25, required: '', description: 'Each time purchased gives +1 to control Domain.' },
+            { name: 'Barrier', cost: 0.25, required: '', description: 'Each time purchased blocks one Power from Territory.' },
+            { name: 'Control', cost: 0.25, required: '', description: 'Each time purchased gives +1 to control Territory.' },
             { name: 'Exceptional', cost: 0.5, required: '', description: 'Once per session, break the rules. May repeat by spending Good Stuff with GM approval.' },
             { name: 'Flexible', cost: 0.5, required: '', description: 'Use one Skill in place of another when [describe circumstance].' },
             { name: 'Focus', cost: 0.5, required: '', description: '+2 to a Skill when [describe circumstance].' },
-            { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Domain.' },
+            { name: 'Security', cost: 0.25, required: '', description: 'Each purchase gives +1 to secure Territory.' },
             { name: 'Unusual', cost: 0, required: '', description: 'Add a Feature not covered above (see GM for cost).' },
             { name: 'Cursed, Risky, or Uncontrolled', cost: -1, required: '', description: 'Add GM chosen Aspect and/or Bad Stuff, get 1 point back.' }
         ],
@@ -1210,7 +1211,7 @@ function updateCharacterSummary() {
             let hasGMPowers = false;
             character.powers.forEach(power => {
                 const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                if (['dominion', 'essence', 'harmony', 'otherlands'].includes(power.id)) {
+                if (['dominion', 'essence', 'song'].includes(power.id)) {
                     const manualCost = gmPowerCosts[power.id];
                     summary += `<p><strong>${powerName}</strong> (${manualCost || 'GM approval required'} pts)</p>`;
                     hasGMPowers = true;
@@ -1513,7 +1514,7 @@ function exportCharacter() {
             output += '\n=== POWERS ===\n';
             exportData.powers.forEach(power => {
                 const powerName = power.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                if (['dominion', 'essence', 'harmony', 'otherlands'].includes(power.id)) {
+                if (['dominion', 'essence', 'song'].includes(power.id)) {
                     const manualCost = gmPowerCosts[power.id];
                     output += `${powerName} (${manualCost || 'GM approval required'} pts)\n`;
                 } else {
@@ -1646,7 +1647,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        const gmPowerIds = ['dominion', 'essence', 'harmony', 'otherlands'];
+        const gmPowerIds = ['dominion', 'essence', 'song'];
         gmPowerIds.forEach(powerId => {
             const input = document.getElementById(powerId + '-manual-cost');
             if (input) {
@@ -1984,7 +1985,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updatePowers();
             
             // Clear GM power costs
-            ['dominion', 'essence', 'harmony', 'otherlands'].forEach(powerId => {
+            ['dominion', 'essence', 'song'].forEach(powerId => {
                 const input = document.getElementById(powerId + '-manual-cost');
                 if (input) input.value = '';
             });
