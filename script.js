@@ -1635,6 +1635,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePointsDisplay();
         // Ensure current save is represented in the drop-down
         upsertCharacterListEntry(character.characterName, character.playerName, character);
+        populateCharacterDropdown();
+        const charSel = document.getElementById('characterSelect');
+        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
         
         const textInputs = ['concept', 'position', 'trouble', 'secret'];
         textInputs.forEach(inputId => {
@@ -1666,7 +1669,63 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
     // ============================================
-    // IMPORT/EXPORT FUNCTIONS FOR MANAGE CHARACTERS SECTION
+    
+function populateCharacterDropdown() {
+    try {
+        const listKey = 'ancientSecrets.characters';
+        const select = document.getElementById('characterSelect');
+        if (!select) return;
+        const list = JSON.parse(localStorage.getItem(listKey) || '[]');
+
+        // Remember current selection
+        const currentVal = select.value;
+
+        // Rebuild options
+        select.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '— Select —';
+        select.appendChild(placeholder);
+
+        list.forEach((c, idx) => {
+            const opt = document.createElement('option');
+            opt.value = String(idx);
+            const cn = (c.characterName || '').trim() || '(Unnamed)';
+            const pn = (c.playerName || '').trim();
+            opt.textContent = pn ? `${cn} — ${pn}` : cn;
+            select.appendChild(opt);
+        });
+
+        // Restore selection if possible
+        if (currentVal && Number(currentVal) < list.length) {
+            select.value = currentVal;
+        }
+    } catch (e) {
+        console.warn('populateCharacterDropdown failed:', e);
+    }
+}
+
+// Load a character snapshot from the list into the builder
+function loadCharacterFromListIndex(idx) {
+    try {
+        const listKey = 'ancientSecrets.characters';
+        const list = JSON.parse(localStorage.getItem(listKey) || '[]');
+        const entry = list[Number(idx)];
+        if (!entry || !entry.snapshot) return;
+
+        // Persist snapshot to the single-save slot and then call loadCharacter()
+        localStorage.setItem('amberCharacter', JSON.stringify(entry.snapshot));
+        loadCharacter();
+
+        // Ensure points and UI refresh
+        updatePointsDisplay();
+        saveCharacter(); // will also upsert & keep dropdown in sync
+    } catch (e) {
+        console.error('loadCharacterFromListIndex failed:', e);
+    }
+}
+
+// IMPORT/EXPORT FUNCTIONS FOR MANAGE CHARACTERS SECTION
     // Add these to the end of your script.js file
     // ============================================
 
@@ -1870,6 +1929,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Register in the character list so the drop-down shows it
                 upsertCharacterListEntry(character.characterName, character.playerName, character);
+        populateCharacterDropdown();
+        const charSel = document.getElementById('characterSelect');
+        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
 
                 showImportStatus('Character imported successfully!', 'success');
                 
@@ -1916,6 +1978,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Register current character in the dropdown list before clearing
         upsertCharacterListEntry(character.characterName, character.playerName, character);
+        populateCharacterDropdown();
+        const charSel = document.getElementById('characterSelect');
+        if (charSel && !charSel._bound) { charSel.addEventListener('change', (e) => loadCharacterFromListIndex(e.target.value)); charSel._bound = true; }
 
         try {
             // Reset character data
