@@ -258,8 +258,7 @@ function updatePowers() {
         console.error('Error in updatePowers:', error);
     }
 
-        // Refresh Extras UI so dropdowns include current powers
-        refreshAllExtrasUI();
+        // (refresh removed here to avoid interrupting active UI interactions)
 }
 
 function updatePowerCosts() {
