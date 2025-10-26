@@ -606,37 +606,35 @@ function renderFeatureInstances(extraId, featureName, instances) {
 
 function renderFeatureInstanceContent(extraId, featureName, instance, index) {
     // Build options for skills + qualifying powers for dropdowns
-    const baseSkillOptions = ['strength','warfare','psyche','endurance','status','intrigue','hunting','lore'];
+    const baseSkillKeys = ['strength','warfare','psyche','endurance','status','intrigue','hunting','lore'];
 
-    // Gather selected powers that should appear:
-    // - any selected power whose id includes 'advanced', 'master', or 'mastery'
-    // - any selected GM power (data-gm-cost="true") as a proxy for "unique"
+    // Selected powers that should appear as "skills" for dropdowns
     const selectedPowerElements = Array.from(document.querySelectorAll('input[type="checkbox"][data-cost]')).filter(el => el.checked);
     const qualifyingPowerIds = selectedPowerElements
-        .filter(el => {
-            const id = (el.id || '').toLowerCase();
-            const gm = el.dataset.gmCost === 'true';
-            return gm || id.includes('advanced') || id.includes('master') || id.includes('mastery');
-        })
-        .map(el => el.id);
+      .filter(el => {
+        const id = (el.id || '').toLowerCase();
+        const gm = el.dataset.gmCost === 'true';
+        return gm || id.includes('advanced') || id.includes('master') || id.includes('mastery');
+      })
+      .map(el => el.id);
 
-    // Deduplicate & map to user-friendly labels
-    const qualifyingPowerOptions = Array.from(new Set(qualifyingPowerIds)).map(id => {
-        const label = id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        return { value: id, label };
-    });
-
-    // Build final options array: skills first (value=skill key), then powers
+    // Build label/value pairs
     const skillOptions = [
-        ...baseSkillOptions.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) })),
-        ...qualifyingPowerOptions
+      ...baseSkillKeys.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) })),
+      ...Array.from(new Set(qualifyingPowerIds)).map(id => ({
+        value: id,
+        label: id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      }))
     ];
 
-    const skillSelect = skillOptions.map(opt => 
-        `<option value="${skill}" ${instance.skill === skill ? 'selected' : ''}>${skill.charAt(0).toUpperCase() + skill.slice(1)}</option>`
-    ).join('');
-    
-    switch(featureName) {
+    // Helper to render <option> tags with a selected value
+    function buildSkillOptions(selectedValue) {
+      return skillOptions.map(opt =>
+        `<option value="${opt.value}" ${selectedValue === opt.value ? 'selected' : ''}>${opt.label}</option>`
+      ).join('');
+    }
+
+    switch (featureName) {
         case 'Skilled':
             return `
                 <div class="form-group">
@@ -646,99 +644,55 @@ function renderFeatureInstanceContent(extraId, featureName, instance, index) {
                             <div class="skill-selection" style="margin-bottom: 5px;">
                                 <select onchange="updateSkillMod('${extraId}', '${featureName}', ${index}, ${idx}, 'skill', this.value)">
                                     <option value="">Select Skill...</option>
-                                    ${skillOptions.map(skill => `<option value="${skill}" ${mod.skill === skill ? 'selected' : ''}>${skill.charAt(0).toUpperCase() + skill.slice(1)}</option>`).join('')}
+                                    ${buildSkillOptions(mod.skill)}
                                 </select>
-                                <input type="number" min="-3" max="12" value="${mod.value || 0}" 
-                                       onchange="updateSkillMod('${extraId}', '${featureName}', ${index}, ${idx}, 'value', this.value)" placeholder="Value">
-                                <button type="button" class="remove-instance-btn" onclick="removeSkillMod('${extraId}', '${featureName}', ${index}, ${idx})">×</button>
+                                <input type="number" min="-3" max="12" value="${mod.value ?? 0}" 
+                                       onchange="updateSkillMod('${extraId}', '${featureName}', ${index}, ${idx}, 'value', parseInt(this.value, 10) || 0)" placeholder="Value">
+                                <button type="button" class="remove-btn" onclick="removeSkillMod('${extraId}', '${featureName}', ${index}, ${idx})">×</button>
                             </div>
                         `).join('')}
-                        <button type="button" class="add-instance-btn" onclick="addSkillMod('${extraId}', '${featureName}', ${index})" style="font-size: 0.7em; padding: 3px 6px;">Add Skill</button>
+                        <button type="button" class="btn btn-secondary" onclick="addSkillMod('${extraId}', '${featureName}', ${index})">+ Add Skill</button>
                     </div>
                 </div>
             `;
-            
+
         case 'Flexible':
             return `
                 <div class="form-group">
-                    <label>Use 
-                        <select onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'skillUsed', this.value)" style="display: inline; width: auto; margin: 0 5px;">
+                    <label>Use one skill or power in place of another:</label>
+                    <div class="flexible-row">
+                        <span>Use</span>
+                        <select onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'skillUsed', this.value)">
                             <option value="">skill</option>
-                            ${skillSelect}
-                        </select> 
-                        in place of 
-                        <select onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'skillReplaced', this.value)" style="display: inline; width: auto; margin: 0 5px;">
+                            ${buildSkillOptions(instance.skillUsed)}
+                        </select>
+                        <span>in place of</span>
+                        <select onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'skillReplaced', this.value)">
                             <option value="">skill</option>
-                            ${skillSelect}
-                        </select> 
-                        when:
-                    </label>
-                    <input type="text" placeholder="e.g., researching ancient families" value="${instance.circumstance || ''}"
-                           onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'circumstance', this.value)" style="width: 100%; margin-top: 5px;">
+                            ${buildSkillOptions(instance.skillReplaced)}
+                        </select>
+                    </div>
                 </div>
             `;
-            
+
         case 'Focus':
             return `
                 <div class="form-group">
-                    <label>+2 to 
-                        <select onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'skill', this.value)" style="display: inline; width: auto; margin: 0 5px;">
-                            <option value="">skill</option>
-                            ${skillSelect}
-                        </select> 
-                        when:
-                    </label>
-                    <input type="text" placeholder="e.g., fighting in your home domain" value="${instance.circumstance || ''}"
-                           onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'circumstance', this.value)" style="width: 100%; margin-top: 5px;">
-                </div>
-            `;
-            
-        case 'Technique':
-            return `
-                <div class="form-group">
-                    <label>Power Ability:</label>
-                    <input type="text" placeholder="e.g., Trump Defense from Trump Artist" value="${instance.ability || ''}"
-                           onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'ability', this.value)" style="width: 100%;">
-                </div>
-            `;
-            
-        case 'Training':
-            return `
-                <div class="form-group">
-                    <label>Skill to Improve:</label>
-                    <select onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'skill', this.value)" style="width: 100%;">
-                        <option value="">Select Skill...</option>
-                        ${skillSelect}
+                    <label>Choose a skill or qualifying power to focus:</label>
+                    <select onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'skill', this.value)">
+                        <option value="">skill</option>
+                        ${buildSkillOptions(instance.skill)}
                     </select>
-                    <label style="margin-top: 10px;">Improvement Level (+1 per point):</label>
-                    <input type="number" min="1" max="5" value="${instance.level || 1}" 
-                           onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'level', this.value)" style="width: 100%;">
+                    <div style="margin-top:6px;">
+                        <label for="focus-notes-${index}">Notes (optional):</label>
+                        <input id="focus-notes-${index}" type="text" value="${instance.notes || ''}" 
+                               onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'notes', this.value)" placeholder="Context or limitation...">
+                    </div>
                 </div>
             `;
-            
-        case 'Talented':
-        case 'Unusual':
-        case 'Primal Born':
-            return `
-                <div class="form-group">
-                    <label>Description:</label>
-                    <textarea placeholder="Describe the custom ability..." 
-                              onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'description', this.value)"
-                              style="width: 100%; height: 60px; resize: vertical;">${instance.description || ''}</textarea>
-                    <label style="margin-top: 10px;">GM-determined Cost:</label>
-                    <input type="number" placeholder="Points" value="${instance.manualCost || ''}"
-                           onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'manualCost', this.value)" style="width: 100%;">
-                </div>
-            `;
-            
+
         default:
-            return `
-                <div class="form-group">
-                    <label>Notes:</label>
-                    <input type="text" placeholder="Additional details..." value="${instance.description || ''}"
-                           onchange="updateFeatureData('${extraId}', '${featureName}', ${index}, 'description', this.value)" style="width: 100%;">
-                </div>
-            `;
+            return '<div class="form-group"><em>No editor for this feature yet.</em></div>';
     }
 }
 
